@@ -58,3 +58,30 @@ test('スラグを指定しない場合、ランダムな文字列が生成さ�
     expect($result->slug)->not->toBeEmpty();
     expect(strlen($result->slug))->toBe(14); // 14桁であることを確認
 });
+
+test('スラグが重複した場合、再生成されること', function () {
+    $input = new CreateArticleInput(
+        userId: 1,
+        title: 'テストタイトル',
+        content: '本文',
+        slug: null // スラグを指定しない
+    );
+
+    $repository = Mockery::mock(ArticleRepositoryInterface::class);
+
+    // 1回目はtrue（重複あり）、2回目はfalse（重複なし）を順番に返す
+    $repository->shouldReceive('existsBySlug')
+        ->times(2) // 合計2回呼ばれることを期待
+        ->andReturnValues([true, false]); 
+
+    $repository->shouldReceive('save')
+        ->once()
+        ->andReturnUsing(fn ($article) => $article);
+
+    $useCase = new CreateArticleUseCase($repository);
+    $result = $useCase->execute($input);
+
+    // 検証：スラグが空でなく、2回生成が試みられていること
+    expect($result->slug)->not->toBeEmpty();
+    expect(strlen($result->slug))->toBe(14); // 14桁であることを確認
+});
