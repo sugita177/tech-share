@@ -13,7 +13,7 @@ readonly class Article
         public string $slug,
         public string $content,
         public string $status,
-        public int $viewCount,
+        public int $viewCount = 0,
         public ?DateTime $createdAt = null,
         public ?DateTime $updatedAt = null,
     ) {}
