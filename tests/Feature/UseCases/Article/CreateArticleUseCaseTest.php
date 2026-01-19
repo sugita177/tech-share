@@ -5,83 +5,110 @@ use App\UseCases\Article\CreateArticleInput;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
 use App\Domain\Entities\Article;
 use Mockery\MockInterface;
+use Illuminate\Support\Str;
 
-test('記事作成ユースケースが正しく実行され、リポジトリが呼ばれること', function () {
-    // 1. 準備 (Inputデータの作成)
-    $input = new CreateArticleInput(
-        userId: 1,
-        title: 'テスト記事タイトル',
-        slug: 'abc',
-        content: 'テスト本文です。',
-        status: 'published'
-    );
-
-    // 2. Mockの設定 (ArticleRepositoryInterfaceをモック化)
-    /** @var ArticleRepositoryInterface|MockInterface $repository */
-    $repository = Mockery::mock(ArticleRepositoryInterface::class);
-    
-    // saveメソッドが1回呼ばれ、特定のEntityを返すことを期待する
-    $repository->shouldReceive('save')
-        ->once()
-        ->with(Mockery::type(Article::class))
-        ->andReturnUsing(fn (Article $article) => $article);
-
-    // 3. 実行
-    $useCase = new CreateArticleUseCase($repository);
-    $result = $useCase->execute($input);
-
-    // 4. 検証 (アサーション)
-    expect($result)->toBeInstanceOf(Article::class);
-    expect($result->title)->toBe('テスト記事タイトル');
-    expect($result->slug)->toBe('abc');
-    expect($result->status)->toBe('published');
-});
-
-test('スラグを指定しない場合、ランダムな文字列が生成されること', function () {
+/**
+ * 正常系テスト
+ */
+test('ユーザーがスラグを指定した場合、そのスラグが使用されること', function () {
     $input = new CreateArticleInput(
         userId: 1,
         title: 'テストタイトル',
         content: '本文',
-        slug: null // スラグを指定しない
+        slug: 'user-custom-slug',
+        status: 'published'
     );
 
     $repository = Mockery::mock(ArticleRepositoryInterface::class);
-    // existsBySlug が呼ばれたら、最初は「存在しない(false)」を返すように設定
+    
+    // 指定されたスラグの重複チェックが行われ、false（重複なし）を返す
     $repository->shouldReceive('existsBySlug')
-        ->once() // 1回呼ばれることを期待
-        ->andReturn(false); // 重複していないと回答
+        ->once()
+        ->with('user-custom-slug')
+        ->andReturn(false);
+
+    $repository->shouldReceive('save')
+        ->once()
+        ->andReturnUsing(fn (Article $article) => $article);
+
+    $useCase = new CreateArticleUseCase($repository);
+    $result = $useCase->execute($input);
+
+    expect($result->slug)->toBe('user-custom-slug');
+});
+
+test('スラグを指定しない場合、重複しないまでランダム生成が試行されること', function () {
+    $input = new CreateArticleInput(
+        userId: 1,
+        title: 'テストタイトル',
+        content: '本文',
+        slug: null,
+        status: 'published'
+    );
+
+    $repository = Mockery::mock(ArticleRepositoryInterface::class);
+
+    // 1回目：重複(true), 2回目：重複なし(false)
+    $repository->shouldReceive('existsBySlug')
+        ->times(2)
+        ->andReturnValues([true, false]);
+
     $repository->shouldReceive('save')->once()->andReturnUsing(fn ($a) => $a);
 
     $useCase = new CreateArticleUseCase($repository);
     $result = $useCase->execute($input);
 
-    expect($result->slug)->not->toBeEmpty();
-    expect(strlen($result->slug))->toBe(14); // 14桁であることを確認
+    expect($result->slug)->toHaveLength(14);
 });
 
-test('スラグが重複した場合、再生成されること', function () {
+/**
+ * 異常系テスト
+ */
+test('ユーザー指定のスラグが既に存在する場合、InvalidArgumentExceptionを投げること', function () {
     $input = new CreateArticleInput(
         userId: 1,
         title: 'テストタイトル',
         content: '本文',
-        slug: null // スラグを指定しない
+        slug: 'already-taken-slug',
+        status: 'published'
     );
 
     $repository = Mockery::mock(ArticleRepositoryInterface::class);
 
-    // 1回目はtrue（重複あり）、2回目はfalse（重複なし）を順番に返す
+    // 重複チェックで true を返す
     $repository->shouldReceive('existsBySlug')
-        ->times(2) // 合計2回呼ばれることを期待
-        ->andReturnValues([true, false]); 
-
-    $repository->shouldReceive('save')
         ->once()
-        ->andReturnUsing(fn ($article) => $article);
+        ->with('already-taken-slug')
+        ->andReturn(true);
+
+    // 保存処理は呼ばれない
+    $repository->shouldNotReceive('save');
 
     $useCase = new CreateArticleUseCase($repository);
-    $result = $useCase->execute($input);
 
-    // 検証：スラグが空でなく、2回生成が試みられていること
-    expect($result->slug)->not->toBeEmpty();
-    expect(strlen($result->slug))->toBe(14); // 14桁であることを確認
+    // 例外の検証
+    expect(fn() => $useCase->execute($input))
+        ->toThrow(InvalidArgumentException::class, '指定されたスラグは既に使用されています。');
+});
+
+test('スラグの自動生成が10回連続で重複した際、RuntimeExceptionを投げること', function () {
+    $input = new CreateArticleInput(
+        userId: 1,
+        title: 'テストタイトル',
+        content: '本文',
+        slug: null,
+        status: 'published'
+    );
+
+    $repository = Mockery::mock(ArticleRepositoryInterface::class);
+
+    // 常に重複していると回答
+    $repository->shouldReceive('existsBySlug')
+        ->times(10) // 最大試行回数
+        ->andReturn(true);
+
+    $useCase = new CreateArticleUseCase($repository);
+
+    expect(fn() => $useCase->execute($input))
+        ->toThrow(RuntimeException::class, 'スラグの自動生成に失敗しました。');
 });
