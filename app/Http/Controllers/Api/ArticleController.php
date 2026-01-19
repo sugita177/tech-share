@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Article\CreateArticleRequest;
+use App\Http\Resources\Api\ArticleResource;
 use App\UseCases\Article\CreateArticleUseCase;
 use Illuminate\Http\JsonResponse;
 
@@ -13,22 +14,17 @@ class ArticleController extends Controller
         CreateArticleRequest $request, 
         CreateArticleUseCase $useCase
     ): JsonResponse {
-        // FormRequest でバリデーション済みの DTO を取得
+        // 1. バリデーション済みの入力を取得
         $input = $request->toInput();
 
-        // UseCase を実行
+        // 2. UseCase を実行（Entity が返ってくる）
         $article = $useCase->execute($input);
 
-        // クリーンアーキテクチャでは Entity をそのまま返さず、
-        // 本来は等価な配列や Resource クラスに変換するのがベストです
-        return response()->json([
-            'message' => '記事を作成しました',
-            'data' => [
-                'id' => $article->id,
-                'title' => $article->title,
-                'slug' => $article->slug,
-                'status' => $article->status,
-            ]
-        ], 201);
+        // 3. Resource を使ってレスポンスを生成
+        // additional() を使うと message などの付加情報を追加できます
+        return (new ArticleResource($article))
+            ->additional(['message' => '記事を作成しました'])
+            ->response()
+            ->setStatusCode(201);
     }
 }
