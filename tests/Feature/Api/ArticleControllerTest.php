@@ -43,15 +43,20 @@ test('タイトルがない場合はバリデーションエラーになる', fu
              ->assertJsonValidationErrors(['title']);
 });
 
-test('記事一覧を取得できること', function () {
-    // 1. 準備：データを数件作成
+test('記事一覧がページネーション形式で取得できること', function () {
     $user = \App\Models\User::factory()->create();
-    \App\Models\Article::factory()->count(3)->create(['user_id' => $user->id]);
+    // 15件作成
+    \App\Models\Article::factory()->count(15)->create(['user_id' => $user->id]);
 
-    // 2. 実行
     $response = $this->getJson('/api/articles');
 
-    // 3. 検証
     $response->assertStatus(200)
-             ->assertJsonCount(3, 'data'); // dataキーの中に3件あるか
+             ->assertJsonCount(10, 'data') // 1ページ目は10件
+             ->assertJsonStructure([
+                 'data',
+                 'links' => ['first', 'last', 'prev', 'next'],
+                 'meta'  => ['current_page', 'from', 'last_page', 'path', 'per_page', 'to', 'total']
+             ]);
+
+    expect($response->json('meta.total'))->toBe(15);
 });

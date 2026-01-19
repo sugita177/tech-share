@@ -4,6 +4,8 @@ namespace App\Domain\Interfaces;
 
 use App\Domain\Entities\Article;
 use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
 
 interface ArticleRepositoryInterface
 {
@@ -13,9 +15,9 @@ interface ArticleRepositoryInterface
     public function findById(int $id): ?Article;
 
     /**
-     * 全記事を取得
+     * ページングして複数記事を取得
      */
-    public function findAll(): array; // ArticleEntity の配列を返す
+    public function paginate(int $perPage = 10): LengthAwarePaginator;
 
     /**
      * 記事を保存（新規作成・更新両用）

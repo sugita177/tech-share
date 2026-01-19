@@ -6,6 +6,8 @@ use App\Domain\Entities\Article as ArticleEntity;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
 use App\Models\Article as EloquentArticle;
 use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
 
 class EloquentArticleRepository implements ArticleRepositoryInterface
 {
@@ -44,23 +46,23 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
         return $article ? $this->toEntity($article) : null;
     }
 
-    /**
-     * 全記事を取得
-     */
-    public function findAll(): array
+    public function paginate(int $perPage = 10): LengthAwarePaginator
     {
-        return \App\Models\Article::latest() // 新しい順
-            ->get()
-            ->map(fn($model) => new ArticleEntity(
-                id: $model->id,
-                userId: $model->user_id,
-                title: $model->title,
-                slug: $model->slug,
-                content: $model->content,
-                status: $model->status,
-                viewCount: $model->view_count
-            ))
-            ->all();
+        $paginator = \App\Models\Article::latest()->paginate($perPage);
+
+        // EloquentモデルのコレクションをEntityのコレクションに変換
+        // ページネーション情報を維持したまま中身だけ入れ替えます
+        $paginator->getCollection()->transform(fn($model) => new ArticleEntity(
+            id: $model->id,
+            userId: $model->user_id,
+            title: $model->title,
+            slug: $model->slug,
+            content: $model->content,
+            status: $model->status,
+            viewCount: $model->view_count
+        ));
+
+        return $paginator;
     }
 
     /**

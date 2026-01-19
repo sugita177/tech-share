@@ -8,6 +8,7 @@ use App\Http\Resources\Api\ArticleResource;
 use App\UseCases\Article\CreateArticleUseCase;
 use App\UseCases\Article\FetchArticlesUseCase;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ArticleController extends Controller
 {
@@ -29,13 +30,13 @@ class ArticleController extends Controller
             ->setStatusCode(201);
     }
 
-    public function index(FetchArticlesUseCase $useCase): JsonResponse
+    public function index(FetchArticlesUseCase $useCase): AnonymousResourceCollection
     {
-        $articles = $useCase->execute();
+        // 1ページ10件で取得
+        $articles = $useCase->execute(10);
 
-        // Resource::collection() で配列をラップして返却
-        return ArticleResource::collection($articles)
-            ->response()
-            ->setStatusCode(200);
+        // JsonResource::collection にパジネーターを渡すと、
+        // 自動的に meta キーや links キーがレスポンスに追加されます
+        return ArticleResource::collection($articles);
     }
 }

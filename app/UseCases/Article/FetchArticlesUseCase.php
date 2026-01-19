@@ -3,6 +3,7 @@
 namespace App\UseCases\Article;
 
 use App\Domain\Interfaces\ArticleRepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class FetchArticlesUseCase
 {
@@ -10,8 +11,8 @@ class FetchArticlesUseCase
         private ArticleRepositoryInterface $repository
     ) {}
 
-    public function execute(): array
+    public function execute(int $perPage = 10): LengthAwarePaginator
     {
-        return $this->repository->findAll();
+        return $this->repository->paginate($perPage);
     }
 }
