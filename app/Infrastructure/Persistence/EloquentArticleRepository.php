@@ -61,7 +61,7 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
             slug: $model->slug,
             content: $model->content,
             status: $model->status,
-            viewCount: $model->view_count,
+            viewCount: $model->view_count ?? 0,// null なら 0 を渡す
             createdAt: $model->created_at,
             updatedAt: $model->updated_at,
         );
