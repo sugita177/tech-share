@@ -44,9 +44,23 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
         return $article ? $this->toEntity($article) : null;
     }
 
-    public function getAll(): Collection
+    /**
+     * 全記事を取得
+     */
+    public function findAll(): array
     {
-        return EloquentArticle::all()->map(fn($model) => $this->toEntity($model));
+        return \App\Models\Article::latest() // 新しい順
+            ->get()
+            ->map(fn($model) => new ArticleEntity(
+                id: $model->id,
+                userId: $model->user_id,
+                title: $model->title,
+                slug: $model->slug,
+                content: $model->content,
+                status: $model->status,
+                viewCount: $model->view_count
+            ))
+            ->all();
     }
 
     /**

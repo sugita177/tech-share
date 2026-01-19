@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Article\CreateArticleRequest;
 use App\Http\Resources\Api\ArticleResource;
 use App\UseCases\Article\CreateArticleUseCase;
+use App\UseCases\Article\FetchArticlesUseCase;
 use Illuminate\Http\JsonResponse;
 
 class ArticleController extends Controller
@@ -26,5 +27,15 @@ class ArticleController extends Controller
             ->additional(['message' => '記事を作成しました'])
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function index(FetchArticlesUseCase $useCase): JsonResponse
+    {
+        $articles = $useCase->execute();
+
+        // Resource::collection() で配列をラップして返却
+        return ArticleResource::collection($articles)
+            ->response()
+            ->setStatusCode(200);
     }
 }

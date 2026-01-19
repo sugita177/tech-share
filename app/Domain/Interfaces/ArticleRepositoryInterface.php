@@ -13,9 +13,9 @@ interface ArticleRepositoryInterface
     public function findById(int $id): ?Article;
 
     /**
-     * 全記事を取得（ページネーションなどは後に検討）
+     * 全記事を取得
      */
-    public function getAll(): Collection;
+    public function findAll(): array; // ArticleEntity の配列を返す
 
     /**
      * 記事を保存（新規作成・更新両用）
