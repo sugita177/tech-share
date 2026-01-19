@@ -42,3 +42,16 @@ test('タイトルがない場合はバリデーションエラーになる', fu
     $response->assertStatus(422) // Unprocessable Entity
              ->assertJsonValidationErrors(['title']);
 });
+
+test('記事一覧を取得できること', function () {
+    // 1. 準備：データを数件作成
+    $user = \App\Models\User::factory()->create();
+    \App\Models\Article::factory()->count(3)->create(['user_id' => $user->id]);
+
+    // 2. 実行
+    $response = $this->getJson('/api/articles');
+
+    // 3. 検証
+    $response->assertStatus(200)
+             ->assertJsonCount(3, 'data'); // dataキーの中に3件あるか
+});
