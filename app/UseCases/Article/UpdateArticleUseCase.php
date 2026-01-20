@@ -6,6 +6,7 @@ use App\Domain\Entities\Article;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class UpdateArticleUseCase
 {
@@ -19,6 +20,11 @@ class UpdateArticleUseCase
         $currentArticle = $this->repository->findById($input->id);
         if (!$currentArticle) {
             throw new ModelNotFoundException();
+        }
+
+        // 認可チェック：記事の作成者と、リクエストしたユーザーが一致するか
+        if ($currentArticle->userId !== $input->userId) {
+            throw new AccessDeniedHttpException('この記事を編集する権限がありません。');
         }
 
         // 2. スラグの重複チェック（変更がある場合のみ）

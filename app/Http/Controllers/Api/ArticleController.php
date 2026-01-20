@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Http\Requests\Article\CreateArticleRequest;
 use App\Http\Requests\Article\UpdateArticleRequest;
 use App\Http\Resources\Api\ArticleResource;
@@ -56,6 +57,7 @@ class ArticleController extends Controller
     {
         $input = new UpdateArticleInput(
             id: $id,
+            userId: $request->user()->id,
             title: $request->input('title'),
             content: $request->input('content'),
             slug: $request->input('slug'),
@@ -67,9 +69,9 @@ class ArticleController extends Controller
         return new ArticleResource($article);
     }
 
-    public function destroy(int $id, DeleteArticleUseCase $useCase): \Illuminate\Http\Response
+    public function destroy(Request $request,int $id, DeleteArticleUseCase $useCase): \Illuminate\Http\Response
     {
-        $useCase->execute($id);
+        $useCase->execute($id, $request->user()->id);
 
         // 成功時は 204 No Content を返すのが一般的です
         return response()->noContent();
