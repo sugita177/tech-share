@@ -6,6 +6,8 @@ use App\Domain\Interfaces\ArticleRepositoryInterface;
 use App\Domain\Entities\Article;
 use Mockery\MockInterface;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+
 
 /**
  * 正常系テスト
@@ -88,7 +90,11 @@ test('ユーザー指定のスラグが既に存在する場合、InvalidArgumen
 
     // 例外の検証
     expect(fn() => $useCase->execute($input))
-        ->toThrow(InvalidArgumentException::class, '指定されたスラグは既に使用されています。');
+        ->toThrow(function (ValidationException $e) {
+            // エラーメッセージの中身を検証
+            expect($e->errors())->toHaveKey('slug');
+            expect($e->errors()['slug'][0])->toBe('指定されたスラグは既に使用されています。');
+        });
 });
 
 test('スラグの自動生成が10回連続で重複した際、RuntimeExceptionを投げること', function () {

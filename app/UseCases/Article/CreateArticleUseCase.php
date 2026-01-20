@@ -6,6 +6,7 @@ use App\Domain\Entities\Article;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
 use App\UseCases\Article\CreateArticleInput;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class CreateArticleUseCase
 {
@@ -32,8 +33,9 @@ class CreateArticleUseCase
         if ($input->slug) {
             // ユーザー指定がある場合：重複していたらエラーを投げる
             if ($this->repository->existsBySlug($input->slug)) {
-                // 独自のドメイン例外を投げると、Controllerで422エラーに変換しやすいです
-                throw new \InvalidArgumentException('指定されたスラグは既に使用されています。');
+                throw ValidationException::withMessages([
+                'slug' => ['指定されたスラグは既に使用されています。']
+            ]);
             }
             $slug = $input->slug;
         } else {
