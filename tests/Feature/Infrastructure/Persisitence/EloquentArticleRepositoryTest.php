@@ -166,3 +166,21 @@ test('update: 存在しないIDの記事を更新しようとするとModelNotFo
     expect(fn() => $this->repository->update($entity))
         ->toThrow(ModelNotFoundException::class);
 });
+
+test('delete: 指定したIDの記事を物理削除できること', function () {
+    // 1. 準備
+    $user = User::factory()->create();
+    $article = EloquentArticle::factory()->create(['user_id' => $user->id]);
+
+    // 2. 実行
+    $this->repository->delete($article->id);
+
+    // 3. 検証
+    $this->assertDatabaseMissing('articles', ['id' => $article->id]);
+});
+
+test('delete: 存在しないIDを指定した場合、ModelNotFoundExceptionを投げること', function () {
+    // 1. 実行 & 2. 検証
+    expect(fn() => $this->repository->delete(9999))
+        ->toThrow(ModelNotFoundException::class);
+});
