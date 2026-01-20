@@ -108,9 +108,9 @@ test('記事を更新できること（スラグ変更なし）', function () {
 });
 
 test('他の記事が使用中のスラグには更新できないこと', function () {
-    $user = \App\Models\User::factory()->create();
-    \App\Models\Article::factory()->create(['slug' => 'taken-slug']);
-    $article = \App\Models\Article::factory()->create(['slug' => 'my-slug']);
+    $user = User::factory()->create();
+    EloquentArticle::factory()->create(['slug' => 'taken-slug']);
+    $article = EloquentArticle::factory()->create(['slug' => 'my-slug']);
 
     $payload = [
         'title' => 'タイトル',
