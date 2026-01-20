@@ -40,12 +40,6 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
         EloquentArticle::destroy($id);
     }
 
-    public function findBySlug(string $slug): ?ArticleEntity
-    {
-        $article = EloquentArticle::where('slug', $slug)->first();
-        return $article ? $this->toEntity($article) : null;
-    }
-
     public function paginate(int $perPage = 10): LengthAwarePaginator
     {
         $paginator = \App\Models\Article::latest()->paginate($perPage);
@@ -90,5 +84,24 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
     {
         // Eloquentの exists() メソッドを使うのが最も効率的です
         return EloquentArticle::where('slug', $slug)->exists();
+    }
+
+    public function findBySlug(string $slug): ?ArticleEntity
+    {
+        $model = EloquentArticle::where('slug', $slug)->first();
+    
+        if (!$model) {
+            return null;
+        }
+    
+        return new ArticleEntity(
+            id: $model->id,
+            userId: $model->user_id,
+            title: $model->title,
+            slug: $model->slug,
+            content: $model->content,
+            status: $model->status,
+            viewCount: $model->view_count
+        );
     }
 }

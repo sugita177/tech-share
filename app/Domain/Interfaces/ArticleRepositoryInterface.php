@@ -30,12 +30,14 @@ interface ArticleRepositoryInterface
     public function delete(int $id): void;
 
     /**
-     * スラグ（URL用文字列）で記事を取得
-     */
-    public function findBySlug(string $slug): ?Article;
-
-    /**
      * 指定されたスラグが既に存在するか確認する
      */
     public function existsBySlug(string $slug): bool;
+
+    /**
+     * スラグ（URL用文字列）で記事を取得
+     * @param string $slug
+     * @return Article|null 見つからない場合はnullを返す
+     */
+    public function findBySlug(string $slug): ?Article;
 }

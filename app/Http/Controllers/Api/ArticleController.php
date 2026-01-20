@@ -7,6 +7,7 @@ use App\Http\Requests\Article\CreateArticleRequest;
 use App\Http\Resources\Api\ArticleResource;
 use App\UseCases\Article\CreateArticleUseCase;
 use App\UseCases\Article\FetchArticlesUseCase;
+use App\UseCases\Article\FindArticleBySlugUseCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -38,5 +39,12 @@ class ArticleController extends Controller
         // JsonResource::collection にパジネーターを渡すと、
         // 自動的に meta キーや links キーがレスポンスに追加されます
         return ArticleResource::collection($articles);
+    }
+
+    public function show(string $slug, FindArticleBySlugUseCase $useCase): ArticleResource
+    {
+        $article = $useCase->execute($slug);
+
+        return new ArticleResource($article);
     }
 }
