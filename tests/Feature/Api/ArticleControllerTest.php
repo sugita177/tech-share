@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\Article as EloquentArticle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class); // テストごとにDBをリセット
@@ -44,9 +45,9 @@ test('タイトルがない場合はバリデーションエラーになる', fu
 });
 
 test('記事一覧がページネーション形式で取得できること', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     // 15件作成
-    \App\Models\Article::factory()->count(15)->create(['user_id' => $user->id]);
+    EloquentArticle::factory()->count(15)->create(['user_id' => $user->id]);
 
     $response = $this->getJson('/api/articles');
 
@@ -59,4 +60,24 @@ test('記事一覧がページネーション形式で取得できること', fu
              ]);
 
     expect($response->json('meta.total'))->toBe(15);
+});
+
+test('記事詳細をスラグで取得できること', function () {
+    $user = User::factory()->create();
+    $article = EloquentArticle::factory()->create([
+        'user_id' => $user->id,
+        'slug' => 'test-slug'
+    ]);
+
+    $response = $this->getJson("/api/articles/test-slug");
+
+    $response->assertStatus(200)
+             ->assertJsonPath('data.slug', 'test-slug')
+             ->assertJsonPath('data.title', $article->title);
+});
+
+test('存在しないスラグを指定した場合、404が返ること', function () {
+    $response = $this->getJson("/api/articles/non-existent-slug");
+
+    $response->assertStatus(404);
 });
