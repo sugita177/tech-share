@@ -37,7 +37,9 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
 
     public function delete(int $id): void
     {
-        EloquentArticle::destroy($id);
+        // 見つからない場合は ModelNotFoundException (404) を投げる
+        $model = EloquentArticle::findOrFail($id);
+        $model->delete();
     }
 
     public function paginate(int $perPage = 10): LengthAwarePaginator

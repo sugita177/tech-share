@@ -10,6 +10,7 @@ use App\UseCases\Article\CreateArticleUseCase;
 use App\UseCases\Article\UpdateArticleUseCase;
 use App\UseCases\Article\FetchArticlesUseCase;
 use App\UseCases\Article\FindArticleBySlugUseCase;
+use App\UseCases\Article\DeleteArticleUseCase;
 use App\UseCases\Article\UpdateArticleInput;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -64,5 +65,13 @@ class ArticleController extends Controller
         $article = $useCase->execute($input);
 
         return new ArticleResource($article);
+    }
+
+    public function destroy(int $id, DeleteArticleUseCase $useCase): \Illuminate\Http\Response
+    {
+        $useCase->execute($id);
+
+        // 成功時は 204 No Content を返すのが一般的です
+        return response()->noContent();
     }
 }

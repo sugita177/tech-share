@@ -125,3 +125,20 @@ test('他の記事が使用中のスラグには更新できないこと', funct
     $response->assertStatus(422)
              ->assertJsonValidationErrors(['slug']);
 });
+
+test('記事を削除できること', function () {
+    $user = User::factory()->create();
+    $article = EloquentArticle::factory()->create(['user_id' => $user->id]);
+
+    $response = $this->deleteJson("/api/articles/{$article->id}");
+
+    $response->assertStatus(204);
+    // DBから消えていることを確認
+    $this->assertDatabaseMissing('articles', ['id' => $article->id]);
+});
+
+test('存在しない記事を削除しようとすると404が返ること', function () {
+    $response = $this->deleteJson("/api/articles/9999");
+
+    $response->assertStatus(404);
+});
