@@ -5,6 +5,8 @@ use App\Infrastructure\Persistence\EloquentArticleRepository;
 use App\Models\User;
 use App\Models\Article as EloquentArticle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+
 
 uses(RefreshDatabase::class);
 
@@ -123,4 +125,44 @@ test('findBySlug: 存在しないスラグを指定した場合、nullが返る�
 
     // 2. 検証
     expect($result)->toBeNull();
+});
+
+test('update: 既存の記事を正しく更新できること', function () {
+    $user = \App\Models\User::factory()->create();
+    $article = \App\Models\Article::factory()->create([
+        'user_id' => $user->id,
+        'title' => '古いタイトル'
+    ]);
+
+    $newEntity = new ArticleEntity(
+        id: $article->id,
+        userId: $user->id,
+        title: '新しいタイトル',
+        slug: $article->slug,
+        content: '新しい内容',
+        status: 'published'
+    );
+
+    $result = $this->repository->update($newEntity);
+
+    expect($result->title)->toBe('新しいタイトル');
+    $this->assertDatabaseHas('articles', [
+        'id' => $article->id,
+        'title' => '新しいタイトル'
+    ]);
+});
+
+test('update: 存在しないIDの記事を更新しようとするとModelNotFoundExceptionを投げること', function () {
+    // 存在しないID (999など) でEntityを作成
+    $entity = new ArticleEntity(
+        id: 999,
+        userId: 1,
+        title: 'タイトル',
+        slug: 'slug',
+        content: '内容',
+        status: 'published'
+    );
+
+    expect(fn() => $this->repository->update($entity))
+        ->toThrow(ModelNotFoundException::class);
 });
