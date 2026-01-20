@@ -67,6 +67,7 @@ test('execute: 正しい入力データで記事を更新し、更新後のEntit
     
     $input = new UpdateArticleInput(
         id: $articleId,
+        userId: $userId,
         title: '新しいタイトル',
         content: '新しい本文',
         slug: 'new-slug',
@@ -91,7 +92,7 @@ test('execute: 重複したスラグを指定した場合、ValidationException�
     $repository->shouldReceive('existsBySlug')->with('taken-slug')->andReturn(true);
 
     $useCase = new UpdateArticleUseCase($repository);
-    $input = new UpdateArticleInput(id: 1, title: '新', content: '..', slug: 'taken-slug', status: 'published');
+    $input = new UpdateArticleInput(id: 1, userId: 1, title: '新', content: '..', slug: 'taken-slug', status: 'published');
 
     // 2. 実行 & 検証
     expect(fn() => $useCase->execute($input))
@@ -104,7 +105,7 @@ test('execute: 更新対象の記事が存在しない場合、ModelNotFoundExce
     $repository->shouldReceive('findById')->with(999)->andReturn(null);
 
     $useCase = new UpdateArticleUseCase($repository);
-    $input = new UpdateArticleInput(id: 999, title: '新', content: '..', slug: 'new-slug', status: 'published');
+    $input = new UpdateArticleInput(id: 999, userId: 1, title: '新', content: '..', slug: 'new-slug', status: 'published');
 
     expect(fn() => $useCase->execute($input))
         ->toThrow(ModelNotFoundException::class);
@@ -122,7 +123,7 @@ test('execute: 自分以外の記事が使用中のスラグに変更しよう�
     $repository->shouldReceive('existsBySlug')->with('other-slug')->andReturn(true);
 
     $useCase = new UpdateArticleUseCase($repository);
-    $input = new UpdateArticleInput(id: 1, title: '新', content: '..', slug: 'other-slug', status: 'published');
+    $input = new UpdateArticleInput(id: 1, userId: 1, title: '新', content: '..', slug: 'other-slug', status: 'published');
 
     // 2. 実行 & 検証
     expect(fn() => $useCase->execute($input))

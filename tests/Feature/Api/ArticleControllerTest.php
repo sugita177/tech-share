@@ -7,7 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class); // テストごとにDBをリセット
 
 test('API経由で記事を作成できる', function () {
-    $this->withoutExceptionHandling(); // これを追加して実行すると、詳細なエラーが出ます
+    //$this->withoutExceptionHandling(); // これを追加して実行すると、詳細なエラーが出ます
 
     // テスト用ユーザーを作成
     $user = User::factory()->create();
@@ -36,9 +36,11 @@ test('API経由で記事を作成できる', function () {
 });
 
 test('タイトルがない場合はバリデーションエラーになる', function () {
-    $response = $this->postJson('/api/articles', [
-        'content' => 'タイトルがありません'
-    ]);
+    $user = User::factory()->create();
+    $response = $this->actingAs($user)
+        ->postJson('/api/articles', [
+            'content' => 'タイトルがありません'
+        ]);
 
     $response->assertStatus(422) // Unprocessable Entity
              ->assertJsonValidationErrors(['title']);
@@ -49,7 +51,8 @@ test('記事一覧がページネーション形式で取得できること', fu
     // 15件作成
     EloquentArticle::factory()->count(15)->create(['user_id' => $user->id]);
 
-    $response = $this->getJson('/api/articles');
+    $response = $this->actingAs($user)
+        ->getJson('/api/articles');
 
     $response->assertStatus(200)
              ->assertJsonCount(10, 'data') // 1ページ目は10件
@@ -69,7 +72,8 @@ test('記事詳細をスラグで取得できること', function () {
         'slug' => 'test-slug'
     ]);
 
-    $response = $this->getJson("/api/articles/test-slug");
+    $response = $this->actingAs($user)
+        ->getJson("/api/articles/test-slug");
 
     $response->assertStatus(200)
              ->assertJsonPath('data.slug', 'test-slug')
@@ -77,14 +81,16 @@ test('記事詳細をスラグで取得できること', function () {
 });
 
 test('存在しないスラグを指定した場合、404が返ること', function () {
-    $response = $this->getJson("/api/articles/non-existent-slug");
+    $user = User::factory()->create();
+    $response = $this->actingAs($user)
+        ->getJson("/api/articles/non-existent-slug");
 
     $response->assertStatus(404);
 });
 
 test('記事を更新できること（スラグ変更なし）', function () {
-    $user = \App\Models\User::factory()->create();
-    $article = \App\Models\Article::factory()->create([
+    $user = User::factory()->create([]);
+    $article = EloquentArticle::factory()->create([
         'user_id' => $user->id,
         'title' => '元々のタイトル',
         'slug' => 'original-slug'
@@ -97,7 +103,8 @@ test('記事を更新できること（スラグ変更なし）', function () {
         'status' => 'published'
     ];
 
-    $response = $this->putJson("/api/articles/{$article->id}", $payload);
+    $response = $this->actingAs($user)
+        ->putJson("/api/articles/{$article->id}", $payload);
 
     $response->assertStatus(200);
     $this->assertDatabaseHas('articles', [
@@ -109,8 +116,17 @@ test('記事を更新できること（スラグ変更なし）', function () {
 
 test('他の記事が使用中のスラグには更新できないこと', function () {
     $user = User::factory()->create();
-    EloquentArticle::factory()->create(['slug' => 'taken-slug']);
-    $article = EloquentArticle::factory()->create(['slug' => 'my-slug']);
+
+    // 重複元となる「他人の記事」を作成
+    EloquentArticle::factory()->create([
+        'slug' => 'taken-slug'
+    ]);
+
+    // 更新対象となる「自分の記事」を作成
+    $article = EloquentArticle::factory()->create([
+        'user_id' => $user->id,
+        'slug' => 'my-slug',
+    ]);
 
     $payload = [
         'title' => 'タイトル',
@@ -119,18 +135,44 @@ test('他の記事が使用中のスラグには更新できないこと', funct
         'status' => 'published'
     ];
 
-    $response = $this->putJson("/api/articles/{$article->id}", $payload);
+    $response = $this->actingAs($user)
+        ->putJson("/api/articles/{$article->id}", $payload);
 
     // 検証：422エラーが返り、slugに関するエラーメッセージが含まれていること
     $response->assertStatus(422)
              ->assertJsonValidationErrors(['slug']);
 });
 
+test('他のユーザーの記事は更新できないこと', function () {
+    $userA = User::factory()->create();
+    $userB = User::factory()->create();
+    
+    // User B が作成した記事
+    $article = EloquentArticle::factory()->create([
+        'user_id' => $userB->id,
+        'title' => 'Bさんの記事'
+    ]);
+
+    $payload = [
+        'title' => 'Aさんが勝手に書き換え',
+        'content' => '本文',
+        'status' => 'published'
+    ];
+
+    // User A としてログインして、Bさんの記事を更新しようとする
+    $response = $this->actingAs($userA)
+                     ->putJson("/api/articles/{$article->id}", $payload);
+
+    // 403 Forbidden（禁止）が返ることを期待
+    $response->assertStatus(403);
+});
+
 test('記事を削除できること', function () {
     $user = User::factory()->create();
     $article = EloquentArticle::factory()->create(['user_id' => $user->id]);
 
-    $response = $this->deleteJson("/api/articles/{$article->id}");
+    $response = $this->actingAs($user)
+        ->deleteJson("/api/articles/{$article->id}");
 
     $response->assertStatus(204);
     // DBから消えていることを確認
@@ -138,7 +180,9 @@ test('記事を削除できること', function () {
 });
 
 test('存在しない記事を削除しようとすると404が返ること', function () {
-    $response = $this->deleteJson("/api/articles/9999");
+    $user = User::factory()->create();
+    $response = $this->actingAs($user)
+        ->deleteJson("/api/articles/9999");
 
     $response->assertStatus(404);
 });
