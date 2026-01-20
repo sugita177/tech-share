@@ -40,4 +40,9 @@ interface ArticleRepositoryInterface
      * @return Article|null 見つからない場合はnullを返す
      */
     public function findBySlug(string $slug): ?Article;
+
+    /**
+     * 記事を更新する
+     */
+    public function update(Article $article): Article;
 }

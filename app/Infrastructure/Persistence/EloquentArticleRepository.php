@@ -104,4 +104,24 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
             viewCount: $model->view_count
         );
     }
+
+    /**
+     * 記事を更新する
+     */
+    public function update(ArticleEntity $article): ArticleEntity
+    {
+        // findOrFail を使うことで、万が一存在しないIDが渡されたらここで404を投げます
+        $model = ELoquentArticle::findOrFail($article->id);
+
+        // user_id は更新対象に含めない
+        $model->fill([
+            'title'   => $article->title,
+            'slug'    => $article->slug,
+            'content' => $article->content,
+            'status'  => $article->status,
+        ])->save();
+
+        // 呼び出し元にはDBから最新の状態（正しいuser_id含む）を再構成して返すのが安全
+        return $this->findById($model->id); 
+    }
 }

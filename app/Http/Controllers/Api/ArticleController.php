@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Article\CreateArticleRequest;
+use App\Http\Requests\Article\UpdateArticleRequest;
 use App\Http\Resources\Api\ArticleResource;
 use App\UseCases\Article\CreateArticleUseCase;
+use App\UseCases\Article\UpdateArticleUseCase;
 use App\UseCases\Article\FetchArticlesUseCase;
 use App\UseCases\Article\FindArticleBySlugUseCase;
+use App\UseCases\Article\UpdateArticleInput;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -44,6 +47,21 @@ class ArticleController extends Controller
     public function show(string $slug, FindArticleBySlugUseCase $useCase): ArticleResource
     {
         $article = $useCase->execute($slug);
+
+        return new ArticleResource($article);
+    }
+
+    public function update(UpdateArticleRequest $request, int $id, UpdateArticleUseCase $useCase): ArticleResource
+    {
+        $input = new UpdateArticleInput(
+            id: $id,
+            title: $request->input('title'),
+            content: $request->input('content'),
+            slug: $request->input('slug'),
+            status: $request->input('status')
+        );
+
+        $article = $useCase->execute($input);
 
         return new ArticleResource($article);
     }
