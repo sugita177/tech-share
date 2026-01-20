@@ -81,3 +81,47 @@ test('存在しないスラグを指定した場合、404が返ること', funct
 
     $response->assertStatus(404);
 });
+
+test('記事を更新できること（スラグ変更なし）', function () {
+    $user = \App\Models\User::factory()->create();
+    $article = \App\Models\Article::factory()->create([
+        'user_id' => $user->id,
+        'title' => '元々のタイトル',
+        'slug' => 'original-slug'
+    ]);
+
+    $payload = [
+        'title' => '更新後のタイトル',
+        'content' => '更新後の本文',
+        'slug' => 'original-slug', // 同じスラグ
+        'status' => 'published'
+    ];
+
+    $response = $this->putJson("/api/articles/{$article->id}", $payload);
+
+    $response->assertStatus(200);
+    $this->assertDatabaseHas('articles', [
+        'id' => $article->id,
+        'title' => '更新後のタイトル',
+        'slug' => 'original-slug'
+    ]);
+});
+
+test('他の記事が使用中のスラグには更新できないこと', function () {
+    $user = \App\Models\User::factory()->create();
+    \App\Models\Article::factory()->create(['slug' => 'taken-slug']);
+    $article = \App\Models\Article::factory()->create(['slug' => 'my-slug']);
+
+    $payload = [
+        'title' => 'タイトル',
+        'content' => '本文',
+        'slug' => 'taken-slug', // 重複！
+        'status' => 'published'
+    ];
+
+    $response = $this->putJson("/api/articles/{$article->id}", $payload);
+
+    // 検証：422エラーが返り、slugに関するエラーメッセージが含まれていること
+    $response->assertStatus(422)
+             ->assertJsonValidationErrors(['slug']);
+});
