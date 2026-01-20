@@ -3,6 +3,7 @@
 use App\Domain\Entities\Article as ArticleEntity;
 use App\Infrastructure\Persistence\EloquentArticleRepository;
 use App\Models\User;
+use App\Models\Article as EloquentArticle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -76,14 +77,14 @@ test('paginate: 指定した件数で分割され、2ページ目が正しく取
 
 test('paginate: 最新の記事が先頭（降順）で取得されること', function () {
     // 1. 準備：作成時間をずらして2件作成
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     
-    $oldArticle = \App\Models\Article::factory()->create([
+    $oldArticle = EloquentArticle::factory()->create([
         'user_id' => $user->id,
         'created_at' => now()->subDay(),
         'title' => '古い記事'
     ]);
-    $newArticle = \App\Models\Article::factory()->create([
+    $newArticle = EloquentArticle::factory()->create([
         'user_id' => $user->id,
         'created_at' => now(),
         'title' => '新しい記事'
@@ -95,4 +96,31 @@ test('paginate: 最新の記事が先頭（降順）で取得されること', f
     // 3. 検証：0番目の要素が新しい方の記事であること
     expect($result->items()[0]->title)->toBe('新しい記事');
     expect($result->items()[1]->title)->toBe('古い記事');
+});
+
+test('findBySlug: 指定したスラグの記事をEntityとして取得できること', function () {
+    // 1. 準備
+    $user = User::factory()->create();
+    $article = EloquentArticle::factory()->create([
+        'user_id' => $user->id,
+        'title'   => '詳細テスト',
+        'slug'    => 'detail-slug',
+    ]);
+
+    // 2. 実行
+    $result = $this->repository->findBySlug('detail-slug');
+
+    // 3. 検証
+    expect($result)->toBeInstanceOf(ArticleEntity::class)
+        ->and($result->id)->toBe($article->id)
+        ->and($result->slug)->toBe('detail-slug')
+        ->and($result->title)->toBe('詳細テスト');
+});
+
+test('findBySlug: 存在しないスラグを指定した場合、nullが返ること', function () {
+    // 1. 実行
+    $result = $this->repository->findBySlug('non-existent-slug');
+
+    // 2. 検証
+    expect($result)->toBeNull();
 });
