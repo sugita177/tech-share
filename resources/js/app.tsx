@@ -1,19 +1,23 @@
 import './bootstrap.js';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
 
 const App: React.FC = () => {
     return (
-        <div style={{ padding: '40px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>
-                社内共有アプリ (React + TypeScript)
-            </h1>
-            <p>Sail環境でのSPA構築が完了しました！</p>
-        </div>
+        <BrowserRouter>
+            <Routes>
+                {/* ログイン画面 */}
+                <Route path="/login" element={<LoginPage />} />
+                
+                {/* 記事一覧（仮：後ほど作成） */}
+                <Route path="/" element={<div>記事一覧（ログイン後に表示）</div>} />
+            </Routes>
+        </BrowserRouter>
     );
 };
 
-// ここから下は「実行命令」
 const container = document.getElementById('app');
 if (container) {
     const root = createRoot(container);
