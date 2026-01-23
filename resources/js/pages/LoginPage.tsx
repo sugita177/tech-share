@@ -2,23 +2,25 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // 画面遷移用
 import axiosClient from '../api/axiosClient';
 import { type LoginResponse } from '../types/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const { login, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+
+    // すでにログイン済みならトップへ飛ばす
+    React.useEffect(() => {
+        if (isAuthenticated) navigate('/');
+    }, [isAuthenticated, navigate]);
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
             // LaravelのコントローラーへPOST
             const response = await axiosClient.post<LoginResponse>('/login', { email, password });
-
-            // コントローラーが返してくる 'access_token' を取得
-            const token = response.data.access_token;
-
-            // ローカルストレージに保存
-            localStorage.setItem('access_token', token);
-
+            // Contextのloginを呼ぶ
+            login(response.data.access_token);
             // ログイン成功！記事一覧へ移動
             navigate('/');
 

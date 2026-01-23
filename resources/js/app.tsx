@@ -2,19 +2,20 @@ import './bootstrap.js';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { PrivateRoute } from './components/PrivateRoute';
 import LoginPage from './pages/LoginPage';
 
 const App: React.FC = () => {
     return (
-        <BrowserRouter>
-            <Routes>
-                {/* ログイン画面 */}
-                <Route path="/login" element={<LoginPage />} />
-                
-                {/* 記事一覧（仮：後ほど作成） */}
-                <Route path="/" element={<div>記事一覧（ログイン後に表示）</div>} />
-            </Routes>
-        </BrowserRouter>
+        <AuthProvider>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/" element={<PrivateRoute><div>記事一覧</div></PrivateRoute>} />
+                </Routes>
+            </BrowserRouter>
+        </AuthProvider>
     );
 };
 
