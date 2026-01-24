@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axiosClient from '../api/axiosClient';
 
 interface AuthContextType {
     isAuthenticated: boolean;
@@ -27,9 +28,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAuthenticated(true);
     };
 
-    const logout = () => {
-        localStorage.removeItem('access_token');
-        setIsAuthenticated(false);
+    const logout = async () => {
+        try {
+            // Laravel側のトークンを無効化
+            await axiosClient.post('/logout');
+        } catch (error) {
+            console.error('Logout API failed', error);
+        } finally {
+            // APIの成功失敗に関わらず、フロント側の情報は必ず消去する
+            localStorage.removeItem('access_token');
+            setIsAuthenticated(false);
+        }
     };
 
     return (

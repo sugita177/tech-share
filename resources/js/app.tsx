@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { PrivateRoute } from './components/PrivateRoute';
 import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage.js';
 
 const App: React.FC = () => {
     return (
@@ -12,7 +13,7 @@ const App: React.FC = () => {
             <BrowserRouter>
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
-                    <Route path="/" element={<PrivateRoute><div>記事一覧</div></PrivateRoute>} />
+                    <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
