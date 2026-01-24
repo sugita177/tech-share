@@ -21,9 +21,9 @@ class ArticleFactory extends Factory
         return [
             // Userが指定されない場合は新しく作成する
             'user_id' => User::factory(), 
-            'title'   => $this->faker->sentence(),
+            'title'   => $this->faker->realText(20),
             'slug'    => $this->faker->unique()->slug(),
-            'content' => $this->faker->paragraphs(3, true),
+            'content' => $this->faker->realText(200),
             'status'  => 'published',
             'view_count' => 0,
         ];
