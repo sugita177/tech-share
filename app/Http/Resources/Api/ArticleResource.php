@@ -17,10 +17,13 @@ class ArticleResource extends JsonResource
         return [
             'id'     => $this->id,
             'title'  => $this->title,
+            'content' => $this->content,
             'slug'   => $this->slug,
             'status' => $this->status,
             // 以前のエラーで追加した view_count などもここでフォーマット可能
             'views'  => $this->viewCount ?? 0, 
+            // フロントエンドでそのまま表示できる形式に変換
+            'created_at' => $this->createdAt?->format('Y/m/d H:i') ?? '不明',
         ];
     }
 }
