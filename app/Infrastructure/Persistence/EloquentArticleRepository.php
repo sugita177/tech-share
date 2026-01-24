@@ -55,7 +55,8 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
             slug: $model->slug,
             content: $model->content,
             status: $model->status,
-            viewCount: $model->view_count
+            viewCount: $model->view_count,
+            createdAt: $model->created_at
         ));
 
         return $paginator;
