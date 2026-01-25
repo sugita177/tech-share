@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axiosClient from '../api/axiosClient';
 import { Article } from '../types/api';
+import { Link } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
     const { logout } = useAuth();
@@ -36,7 +37,15 @@ const DashboardPage: React.FC = () => {
             </nav>
 
             <div className="max-w-4xl mx-auto">
-                <h2 className="text-xl font-bold mb-6 text-gray-800">最新の記事</h2>
+                        <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">最新の記事</h2>
+                <Link 
+                    to="/articles/create" 
+                    className="bg-sky-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-sky-700 transition shadow-sm"
+                >
+                    + 記事を書く
+                </Link>
+            </div>
                 
                 {loading ? (
                     <p className="text-center text-gray-500">読み込み中...</p>
