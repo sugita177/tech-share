@@ -3,6 +3,7 @@
 namespace App\Domain\Entities;
 
 use DateTime;
+use App\Domain\Enums\ArticleStatus;
 
 readonly class Article
 {
@@ -12,7 +13,7 @@ readonly class Article
         public string $title,
         public string $slug,
         public string $content,
-        public string $status,
+        public ArticleStatus $status,
         public int $viewCount = 0,
         public ?DateTime $createdAt = null,
         public ?DateTime $updatedAt = null,

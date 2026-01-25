@@ -2,6 +2,8 @@
 
 namespace App\UseCases\Article;
 
+use App\Domain\Enums\ArticleStatus;
+
 readonly class CreateArticleInput
 {
     public function __construct(
@@ -9,7 +11,7 @@ readonly class CreateArticleInput
         public string $title,
         public string $content,
         public ?string $slug = null,
-        public string $status = 'draft',
+        public ArticleStatus $status,
     ) {}
 
     /**

@@ -5,6 +5,7 @@ namespace App\Infrastructure\Persistence;
 use App\Domain\Entities\Article as ArticleEntity;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
 use App\Models\Article as EloquentArticle;
+use App\Domain\Enums\ArticleStatus;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -44,20 +45,11 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
 
     public function paginate(int $perPage = 10): LengthAwarePaginator
     {
-        $paginator = \App\Models\Article::latest()->paginate($perPage);
+        $paginator = EloquentArticle::latest()->paginate($perPage);
 
         // EloquentモデルのコレクションをEntityのコレクションに変換
         // ページネーション情報を維持したまま中身だけ入れ替えます
-        $paginator->getCollection()->transform(fn($model) => new ArticleEntity(
-            id: $model->id,
-            userId: $model->user_id,
-            title: $model->title,
-            slug: $model->slug,
-            content: $model->content,
-            status: $model->status,
-            viewCount: $model->view_count,
-            createdAt: $model->created_at
-        ));
+        $paginator->getCollection()->transform(fn($model) => $this->toEntity($model));
 
         return $paginator;
     }
@@ -92,20 +84,7 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
     public function findBySlug(string $slug): ?ArticleEntity
     {
         $model = EloquentArticle::where('slug', $slug)->first();
-    
-        if (!$model) {
-            return null;
-        }
-    
-        return new ArticleEntity(
-            id: $model->id,
-            userId: $model->user_id,
-            title: $model->title,
-            slug: $model->slug,
-            content: $model->content,
-            status: $model->status,
-            viewCount: $model->view_count
-        );
+        return $model ? $this->toEntity($model) : null;
     }
 
     /**
