@@ -41,8 +41,8 @@ class ArticleController extends Controller
         // 1ページ10件で取得
         $articles = $useCase->execute(10);
 
-        // JsonResource::collection にパジネーターを渡すと、
-        // 自動的に meta キーや links キーがレスポンスに追加されます
+        // JsonResource::collection にぺージネーターを渡すと、
+        // 自動的に meta キーや links キーがレスポンスに追加される
         return ArticleResource::collection($articles);
     }
 
@@ -73,7 +73,7 @@ class ArticleController extends Controller
     {
         $useCase->execute($id, $request->user()->id);
 
-        // 成功時は 204 No Content を返すのが一般的です
+        // 成功時は 204 No Content を返すのが一般的
         return response()->noContent();
     }
 }
