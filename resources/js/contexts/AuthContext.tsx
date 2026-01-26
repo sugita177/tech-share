@@ -8,7 +8,7 @@ interface AuthContextType {
     loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
