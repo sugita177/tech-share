@@ -23,6 +23,8 @@ const DashboardPage: React.FC = () => {
                 prev_page_url: response.data.links.prev,
                 next_page_url: response.data.links.next,
             });
+            // データを読み込んだら、画面の最上部（x=0, y=0）に戻す
+            window.scrollTo({ top: 0, behavior: 'auto' });
         } catch (error) {
             console.error('記事の取得に失敗しました', error);
         } finally {
@@ -33,6 +35,26 @@ const DashboardPage: React.FC = () => {
     useEffect(() => {
         fetchArticles();
     }, []);
+
+    const getVisiblePages = (current: number, last: number) => {
+        const range = 2; // 現在のページの前後何ページ表示するか
+        const pages: (number | string)[] = [];
+
+        for (let i = 1; i <= last; i++) {
+            // 必ず表示する条件: 最初、最後、現在のページの前後
+            if (i === 1 || i === last || (i >= current - range && i <= current + range)) {
+                pages.push(i);
+            } 
+            // 省略記号を入れる条件
+            else if (i === current - range - 1 || i === current + range + 1) {
+                pages.push('...');
+            }
+        }
+        // 重複した '...' を排除
+        return pages.filter((v, i, a) => a.indexOf(v) === i);
+    };
+
+    const visiblePages = pagination ? getVisiblePages(pagination.current_page, pagination.last_page) : [];
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">
@@ -72,25 +94,41 @@ const DashboardPage: React.FC = () => {
             </div>
             {/* ページネーションコントロール */}
             {pagination && pagination.last_page > 1 && (
-                <div className="flex justify-center items-center gap-4 mt-10">
+                <div className="flex justify-center items-center gap-2 mt-10">
                     <button
                         onClick={() => fetchArticles(pagination.current_page - 1)}
                         disabled={!pagination.prev_page_url}
-                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition"
+                        className="px-3 py-2 border rounded-md disabled:opacity-30 hover:bg-gray-100 transition"
                     >
-                        前のページ
+                        &lt; 前へ
                     </button>
 
-                    <span className="text-gray-600 font-medium">
-                        {pagination.current_page} / {pagination.last_page}
-                    </span>
-            
+                    <div className="flex gap-1 items-center">
+                        {visiblePages.map((page, index) => (
+                            page === '...' ? (
+                                <span key={`dots-${index}`} className="px-3 py-2 text-gray-400">...</span>
+                            ) : (
+                                <button
+                                    key={page}
+                                    onClick={() => fetchArticles(Number(page))}
+                                    className={`px-4 py-2 border rounded-md transition ${
+                                        pagination.current_page === page
+                                            ? 'bg-sky-600 text-white border-sky-600'
+                                            : 'bg-white text-gray-600 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            )
+                        ))}
+                    </div>
+                    
                     <button
                         onClick={() => fetchArticles(pagination.current_page + 1)}
                         disabled={!pagination.next_page_url}
-                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition"
+                        className="px-3 py-2 border rounded-md disabled:opacity-30 hover:bg-gray-100 transition"
                     >
-                        次のページ
+                        次へ &gt;
                     </button>
                 </div>
             )}
