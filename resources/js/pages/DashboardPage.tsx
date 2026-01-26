@@ -37,21 +37,20 @@ const DashboardPage: React.FC = () => {
     }, []);
 
     const getVisiblePages = (current: number, last: number) => {
-        const range = 2; // 現在のページの前後何ページ表示するか
+        const range = 2;
         const pages: (number | string)[] = [];
-
+        
         for (let i = 1; i <= last; i++) {
-            // 必ず表示する条件: 最初、最後、現在のページの前後
             if (i === 1 || i === last || (i >= current - range && i <= current + range)) {
                 pages.push(i);
-            } 
-            // 省略記号を入れる条件
-            else if (i === current - range - 1 || i === current + range + 1) {
-                pages.push('...');
+            } else if (i === current - range - 1 || i === current + range + 1) {
+                // 直前がすでに '...' でない場合のみ追加する
+                if (pages[pages.length - 1] !== '...') {
+                    pages.push('...');
+                }
             }
         }
-        // 重複した '...' を排除
-        return pages.filter((v, i, a) => a.indexOf(v) === i);
+        return pages;
     };
 
     const visiblePages = pagination ? getVisiblePages(pagination.current_page, pagination.last_page) : [];
