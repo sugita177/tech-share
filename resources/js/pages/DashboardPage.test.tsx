@@ -13,8 +13,8 @@ describe('DashboardPage', () => {
     window.scrollTo = vi.fn();
 
     const mockArticles = [
-        { id: 1, title: '記事1', content: '内容1', created_at: '2024-01-01' },
-        { id: 2, title: '記事2', content: '内容2', created_at: '2024-01-02' },
+        { id: 1, title: '記事1', content: '内容1', slug: 'slug-1', created_at: '2024-01-01' },
+        { id: 2, title: '記事2', content: '内容2', slug: 'slug-2', created_at: '2024-01-02' },
     ];
 
     const mockPaginationResponse = {
@@ -169,5 +169,25 @@ describe('DashboardPage', () => {
         await waitFor(() => {
             expect(axiosClient.get).toHaveBeenCalledWith('/articles?page=10');
         });
+    });
+
+    it('各記事に詳細画面への正しいリンクが設定されていること', async () => {
+        (axiosClient.get as any).mockResolvedValue(mockPaginationResponse);
+        
+        renderDashboard();
+        
+        // 記事の表示を待つ
+        await waitFor(() => {
+            expect(screen.getByText('記事1')).toBeInTheDocument();
+        });
+    
+        // 「記事1」というテキストを含むリンク（<a>タグ）を探す
+        // getByRole('link') は Link コンポーネントがレンダリングする <a> タグを取得します
+        const link1 = screen.getByRole('link', { name: /記事1/i });
+        const link2 = screen.getByRole('link', { name: /記事2/i });
+    
+        // href 属性が正しいか確認（BrowserRouter を使っているので、ルートからのパスで検証）
+        expect(link1).toHaveAttribute('href', '/articles/slug-1');
+        expect(link2).toHaveAttribute('href', '/articles/slug-2');
     });
 });

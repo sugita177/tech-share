@@ -80,13 +80,21 @@ const DashboardPage: React.FC = () => {
                 ) : (
                     <div className="grid gap-4">
                         {articles.map(article => (
-                            <div key={article.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                                <h3 className="text-lg font-bold text-gray-900">{article.title}</h3>
-                                <p className="text-gray-600 mt-2 line-clamp-2">{article.content}</p>
+                            <Link 
+                                key={article.id} 
+                                to={`/articles/${article.slug}`} // slugを使って遷移
+                                className="block bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-sky-200 transition group"
+                            >
+                                <h3 className="text-lg font-bold text-gray-900 group-hover:text-sky-600 transition">
+                                    {article.title}
+                                </h3>
+                                <p className="text-gray-600 mt-2 line-clamp-2">
+                                    {article.content}
+                                </p>
                                 <div className="mt-4 text-sm text-gray-400">
                                     {article.created_at}
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 )}
