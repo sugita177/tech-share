@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\UseCases\Article\UpdateArticleUseCase;
 use App\UseCases\Article\UpdateArticleInput;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
+use App\Domain\Enums\ArticleStatus;
 use Mockery\MockInterface;
 use Illuminate\Support\Str;
 
@@ -21,7 +22,7 @@ test('execute: 正しい入力データで記事を更新し、更新後のEntit
         title: '元のタイトル',
         slug: 'original-slug',
         content: '元の本文',
-        status: 'draft',
+        status: ArticleStatus::Draft,
         viewCount: 5
     );
 
@@ -32,7 +33,7 @@ test('execute: 正しい入力データで記事を更新し、更新後のEntit
         title: '新しいタイトル',
         slug: 'new-slug',
         content: '新しい本文',
-        status: 'published',
+        status: ArticleStatus::Published,
         viewCount: 5
     );
 
@@ -71,7 +72,7 @@ test('execute: 正しい入力データで記事を更新し、更新後のEntit
         title: '新しいタイトル',
         content: '新しい本文',
         slug: 'new-slug',
-        status: 'published'
+        status: ArticleStatus::Published
     );
 
     // 2. 実行
@@ -83,8 +84,8 @@ test('execute: 正しい入力データで記事を更新し、更新後のEntit
 
 test('execute: 重複したスラグを指定した場合、ValidationExceptionを投げること', function () {
     // 1. 準備
-    $currentArticle = new Article(id: 1, userId: 1, title: '旧', slug: 'old-slug', content: '..', status: 'draft');
-    $anotherArticle = new Article(id: 2, userId: 1, title: '他', slug: 'taken-slug', content: '..', status: 'draft');
+    $currentArticle = new Article(id: 1, userId: 1, title: '旧', slug: 'old-slug', content: '..', status: ArticleStatus::Draft);
+    $anotherArticle = new Article(id: 2, userId: 1, title: '他', slug: 'taken-slug', content: '..', status: ArticleStatus::Draft);
 
     $repository = Mockery::mock(ArticleRepositoryInterface::class);
     $repository->shouldReceive('findById')->with(1)->andReturn($currentArticle);
@@ -92,7 +93,7 @@ test('execute: 重複したスラグを指定した場合、ValidationException�
     $repository->shouldReceive('existsBySlug')->with('taken-slug')->andReturn(true);
 
     $useCase = new UpdateArticleUseCase($repository);
-    $input = new UpdateArticleInput(id: 1, userId: 1, title: '新', content: '..', slug: 'taken-slug', status: 'published');
+    $input = new UpdateArticleInput(id: 1, userId: 1, title: '新', content: '..', slug: 'taken-slug', status: ArticleStatus::Published);
 
     // 2. 実行 & 検証
     expect(fn() => $useCase->execute($input))
@@ -105,7 +106,7 @@ test('execute: 更新対象の記事が存在しない場合、ModelNotFoundExce
     $repository->shouldReceive('findById')->with(999)->andReturn(null);
 
     $useCase = new UpdateArticleUseCase($repository);
-    $input = new UpdateArticleInput(id: 999, userId: 1, title: '新', content: '..', slug: 'new-slug', status: 'published');
+    $input = new UpdateArticleInput(id: 999, userId: 1, title: '新', content: '..', slug: 'new-slug', status: ArticleStatus::Published);
 
     expect(fn() => $useCase->execute($input))
         ->toThrow(ModelNotFoundException::class);
@@ -114,7 +115,7 @@ test('execute: 更新対象の記事が存在しない場合、ModelNotFoundExce
 test('execute: 自分以外の記事が使用中のスラグに変更しようとした場合、ValidationExceptionを投げること', function () {
     // 1. 準備
     // 自身のデータ
-    $current = new Article(id: 1, userId: 1, title: '旧', slug: 'my-slug', content: '..', status: 'published');
+    $current = new Article(id: 1, userId: 1, title: '旧', slug: 'my-slug', content: '..', status: ArticleStatus::Published);
     
     $repository = Mockery::mock(ArticleRepositoryInterface::class);
     $repository->shouldReceive('findById')->with(1)->andReturn($current);
@@ -123,7 +124,7 @@ test('execute: 自分以外の記事が使用中のスラグに変更しよう�
     $repository->shouldReceive('existsBySlug')->with('other-slug')->andReturn(true);
 
     $useCase = new UpdateArticleUseCase($repository);
-    $input = new UpdateArticleInput(id: 1, userId: 1, title: '新', content: '..', slug: 'other-slug', status: 'published');
+    $input = new UpdateArticleInput(id: 1, userId: 1, title: '新', content: '..', slug: 'other-slug', status: ArticleStatus::Published);
 
     // 2. 実行 & 検証
     expect(fn() => $useCase->execute($input))

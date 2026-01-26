@@ -4,6 +4,7 @@ namespace Tests\Unit\UseCases\Article;
 
 use App\Domain\Entities\Article as ArticleEntity;
 use App\UseCases\Article\DeleteArticleUseCase;
+use App\Domain\Enums\ArticleStatus;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Mockery;
@@ -27,7 +28,7 @@ test('execute: 指定したIDがリポジトリの削除メソッドに渡され
             title: 'Test',
             slug: 'test',
             content: '...',
-            status: 'published'
+            status: ArticleStatus::Published
         ));
     
     // delete メソッドが指定した ID で 1 回呼ばれることを期待
@@ -63,7 +64,7 @@ test('execute: リポジトリで例外が発生した場合、そのまま例�
             title: 'Test',
             slug: 'test',
             content: '...',
-            status: 'published'
+            status: ArticleStatus::Published
         ));
     
     // リポジトリが例外を投げるように設定

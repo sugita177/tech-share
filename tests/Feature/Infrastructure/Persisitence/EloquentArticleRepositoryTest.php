@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Entities\Article as ArticleEntity;
+use App\Domain\Enums\ArticleStatus;
 use App\Infrastructure\Persistence\EloquentArticleRepository;
 use App\Models\User;
 use App\Models\Article as EloquentArticle;
@@ -23,7 +24,7 @@ test('save: 正しく保存され、IDが付与されたEntityが返されるこ
         title: 'リポジトリテスト',
         slug: 'repo-test',
         content: 'テスト内容',
-        status: 'published'
+        status: ArticleStatus::Published
     );
 
     // 2. 実行
@@ -49,7 +50,7 @@ test('existsBySlug: 指定したスラグの存在有無を正しく判定でき
         'title'   => '既存記事',
         'slug'    => 'existing-slug',
         'content' => '本文',
-        'status'  => 'published'
+        'status'  => ArticleStatus::Published
     ]);
 
     // 2. 実行 & 検証
@@ -128,8 +129,8 @@ test('findBySlug: 存在しないスラグを指定した場合、nullが返る�
 });
 
 test('update: 既存の記事を正しく更新できること', function () {
-    $user = \App\Models\User::factory()->create();
-    $article = \App\Models\Article::factory()->create([
+    $user = User::factory()->create();
+    $article = EloquentArticle::factory()->create([
         'user_id' => $user->id,
         'title' => '古いタイトル'
     ]);
@@ -140,7 +141,7 @@ test('update: 既存の記事を正しく更新できること', function () {
         title: '新しいタイトル',
         slug: $article->slug,
         content: '新しい内容',
-        status: 'published'
+        status: ArticleStatus::Published
     );
 
     $result = $this->repository->update($newEntity);
@@ -160,7 +161,7 @@ test('update: 存在しないIDの記事を更新しようとするとModelNotFo
         title: 'タイトル',
         slug: 'slug',
         content: '内容',
-        status: 'published'
+        status: ArticleStatus::Published
     );
 
     expect(fn() => $this->repository->update($entity))

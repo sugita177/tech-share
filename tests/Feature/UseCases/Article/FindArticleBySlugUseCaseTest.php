@@ -5,6 +5,7 @@ namespace Tests\Unit\UseCases\Article;
 use App\UseCases\Article\FindArticleBySlugUseCase;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
 use App\Domain\Entities\Article as ArticleEntity;
+use App\Domain\Enums\ArticleStatus;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Mockery;
 use Mockery\MockInterface;
@@ -18,7 +19,7 @@ test('execute: 指定したスラグの記事が存在する場合、そのEntit
         title: 'テスト記事',
         slug: $slug,
         content: '本文',
-        status: 'published'
+        status: ArticleStatus::Published
     );
 
     /** @var ArticleRepositoryInterface|MockInterface $repository */

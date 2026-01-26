@@ -4,6 +4,7 @@ use App\UseCases\Article\CreateArticleUseCase;
 use App\UseCases\Article\CreateArticleInput;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
 use App\Domain\Entities\Article;
+use App\Domain\Enums\ArticleStatus;
 use Mockery\MockInterface;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -18,7 +19,7 @@ test('ユーザーがスラグを指定した場合、そのスラグが使用�
         title: 'テストタイトル',
         content: '本文',
         slug: 'user-custom-slug',
-        status: 'published'
+        status: ArticleStatus::Published
     );
 
     $repository = Mockery::mock(ArticleRepositoryInterface::class);
@@ -45,7 +46,7 @@ test('スラグを指定しない場合、重複しないまでランダム生�
         title: 'テストタイトル',
         content: '本文',
         slug: null,
-        status: 'published'
+        status: ArticleStatus::Published
     );
 
     $repository = Mockery::mock(ArticleRepositoryInterface::class);
@@ -72,7 +73,7 @@ test('ユーザー指定のスラグが既に存在する場合、InvalidArgumen
         title: 'テストタイトル',
         content: '本文',
         slug: 'already-taken-slug',
-        status: 'published'
+        status: ArticleStatus::Published
     );
 
     $repository = Mockery::mock(ArticleRepositoryInterface::class);
@@ -103,7 +104,7 @@ test('スラグの自動生成が10回連続で重複した際、RuntimeExceptio
         title: 'テストタイトル',
         content: '本文',
         slug: null,
-        status: 'published'
+        status: ArticleStatus::Published
     );
 
     $repository = Mockery::mock(ArticleRepositoryInterface::class);
