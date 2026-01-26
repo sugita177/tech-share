@@ -2,6 +2,8 @@
 
 namespace App\UseCases\Article;
 
+use App\Domain\Enums\ArticleStatus;
+
 class UpdateArticleInput
 {
     public function __construct(
@@ -10,6 +12,6 @@ class UpdateArticleInput
         public readonly string $title,
         public readonly string $content,
         public readonly ?string $slug,
-        public readonly string $status
+        public readonly ArticleStatus $status
     ) {}
 }

@@ -13,6 +13,7 @@ use App\UseCases\Article\FetchArticlesUseCase;
 use App\UseCases\Article\FindArticleBySlugUseCase;
 use App\UseCases\Article\DeleteArticleUseCase;
 use App\UseCases\Article\UpdateArticleInput;
+use App\Domain\Enums\ArticleStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -61,7 +62,7 @@ class ArticleController extends Controller
             title: $request->input('title'),
             content: $request->input('content'),
             slug: $request->input('slug'),
-            status: $request->input('status')
+            status: ArticleStatus::from($request->input('status'))
         );
 
         $article = $useCase->execute($input);
