@@ -7,6 +7,7 @@ import { PrivateRoute } from './components/PrivateRoute';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ArticleCreatePage from './pages/ArticleCreatePage';
+import ArticleDetailPage from './pages/ArticleDetailPage';
 
 const App: React.FC = () => {
     return (
@@ -16,6 +17,7 @@ const App: React.FC = () => {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                     <Route path="/articles/create" element={<PrivateRoute><ArticleCreatePage /></PrivateRoute>} />
+                    <Route path="/articles/:slug" element={<PrivateRoute><ArticleDetailPage /></PrivateRoute>} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
