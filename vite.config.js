@@ -21,4 +21,9 @@ export default defineConfig({
             ignored: ['**/storage/framework/views/**'],
         },
     },
+    test: {
+        globals: true,           // describe や expect をグローバルで使えるようにする
+        environment: 'jsdom',    // ブラウザ環境をシミュレート
+        setupFiles: ['./resources/js/test/setup.ts'], // 初期設定ファイル（後述）
+    },
 });
