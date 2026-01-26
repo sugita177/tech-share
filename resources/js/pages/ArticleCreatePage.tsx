@@ -32,11 +32,12 @@ const ArticleCreatePage: React.FC = () => {
                 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
                             タイトル
                         </label>
                         <input
                             type="text"
+                            id="title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             className="w-full border border-gray-300 p-3 rounded-md focus:ring-2 focus:ring-sky-500 outline-none"
@@ -46,10 +47,11 @@ const ArticleCreatePage: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
                             本文
                         </label>
                         <textarea
+                            id="content"
                             rows={12}
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
