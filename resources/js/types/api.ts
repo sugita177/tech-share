@@ -29,3 +29,11 @@ export interface PaginatedResponse<T> {
         total: number;
     };
 }
+
+// ページ情報の型定義
+export interface PaginationData {
+    current_page: number;
+    last_page: number;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+}

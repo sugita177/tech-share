@@ -1,29 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axiosClient from '../api/axiosClient';
-import { Article } from '../types/api';
+import { Article, PaginatedResponse, PaginationData } from '../types/api';
 import { Link } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
     const { logout } = useAuth();
     const [articles, setArticles] = useState<Article[]>([]);
+    const [pagination, setPagination] = useState<PaginationData | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const fetchArticles = async (page: number = 1) => {
+        try {
+            // 型指定を response.data 全体に合わせておくと安全
+            const response = await axiosClient.get<PaginatedResponse<Article>>(`/articles?page=${page}`);
+            // response.data.data が実際の配列
+            setArticles(response.data.data);
+            // ページネーション情報を保存
+            setPagination({
+                current_page: response.data.meta.current_page,
+                last_page: response.data.meta.last_page,
+                prev_page_url: response.data.links.prev,
+                next_page_url: response.data.links.next,
+            });
+        } catch (error) {
+            console.error('記事の取得に失敗しました', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
     useEffect(() => {
-        const fetchArticles = async () => {
-            try {
-                // 型指定を response.data 全体に合わせておくと安全です
-                const response = await axiosClient.get<{ data: Article[] }>('/articles');
-
-                console.log("Raw Data from API:", response.data.data[0]);
-                // response.data.data が実際の配列です
-                setArticles(response.data.data);
-            } catch (error) {
-                console.error('記事の取得に失敗しました', error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchArticles();
     }, []);
 
@@ -63,6 +70,30 @@ const DashboardPage: React.FC = () => {
                     </div>
                 )}
             </div>
+            {/* ページネーションコントロール */}
+            {pagination && pagination.last_page > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-10">
+                    <button
+                        onClick={() => fetchArticles(pagination.current_page - 1)}
+                        disabled={!pagination.prev_page_url}
+                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition"
+                    >
+                        前のページ
+                    </button>
+
+                    <span className="text-gray-600 font-medium">
+                        {pagination.current_page} / {pagination.last_page}
+                    </span>
+            
+                    <button
+                        onClick={() => fetchArticles(pagination.current_page + 1)}
+                        disabled={!pagination.next_page_url}
+                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50 transition"
+                    >
+                        次のページ
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
