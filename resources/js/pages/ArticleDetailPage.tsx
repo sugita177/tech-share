@@ -28,6 +28,26 @@ const ArticleDetailPage: React.FC = () => {
         if (slug) fetchArticle();
     }, [slug, navigate]);
 
+    // 追加：削除処理
+    const handleDelete = async () => {
+        if (!article) return;
+
+        // ユーザーに確認を取る
+        if (!window.confirm('この記事を完全に削除してもよろしいですか？')) {
+            return;
+        }
+
+        try {
+            // バックエンドの destroy(int $id) に合わせて ID を送信
+            await axiosClient.delete(`/articles/${article.id}`);
+            alert('記事を削除しました。');
+            navigate('/'); // 一覧画面へ戻る
+        } catch (error: any) {
+            console.error("削除に失敗しました", error);
+            alert(error.response?.data?.message || "削除に失敗しました。");
+        }
+    };
+
     if (loading) return <div className="text-center mt-10">読み込み中...</div>;
     if (!article) return null;
 
@@ -86,7 +106,7 @@ const ArticleDetailPage: React.FC = () => {
                                 編集する
                             </button>
                             <button 
-                                onClick={() => {/* 削除処理 */}}
+                                onClick={handleDelete}
                                 className="px-5 py-2 text-sm font-semibold text-red-600 hover:text-red-700 transition"
                             >
                                 削除
