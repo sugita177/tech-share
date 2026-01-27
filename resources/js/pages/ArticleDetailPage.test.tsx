@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import ArticleDetailPage from './ArticleDetailPage';
@@ -86,5 +86,31 @@ describe('ArticleDetailPage', () => {
             const backLink = screen.getByRole('link', { name: /記事一覧に戻る/i });
             expect(backLink).toHaveAttribute('href', '/');
         });
+    });
+
+    it('削除ボタンを押して確認ダイアログでOKを押すと、削除APIが呼ばれ一覧へ遷移すること', async () => {
+        (axiosClient.get as any).mockResolvedValue({ data: { data: mockArticle } });
+        (axiosClient.delete as any).mockResolvedValue({}); // 204想定なので空でOK
+
+        // confirmをモック化して true を返すように設定
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+        renderComponent();
+        await screen.findByText('テスト記事タイトル');
+
+        const deleteButton = screen.getByRole('button', { name: /削除/i });
+        fireEvent.click(deleteButton);
+
+        // 確認ダイアログが出たか
+        expect(confirmSpy).toHaveBeenCalled();
+
+        await waitFor(() => {
+            // 正しいIDでDELETEリクエストが飛んだか
+            expect(axiosClient.delete).toHaveBeenCalledWith(`/articles/${mockArticle.id}`);
+            // 削除後にトップへ戻ったか
+            expect(mockNavigate).toHaveBeenCalledWith('/');
+        });
+
+        confirmSpy.mockRestore();
     });
 });
