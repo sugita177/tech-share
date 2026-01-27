@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ArticleCreatePage from './pages/ArticleCreatePage';
 import ArticleDetailPage from './pages/ArticleDetailPage';
+import ArticleEditPage from './pages/ArticleEditPage';
 
 const App: React.FC = () => {
     return (
@@ -18,6 +19,7 @@ const App: React.FC = () => {
                     <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
                     <Route path="/articles/create" element={<PrivateRoute><ArticleCreatePage /></PrivateRoute>} />
                     <Route path="/articles/:slug" element={<PrivateRoute><ArticleDetailPage /></PrivateRoute>} />
+                    <Route path="/articles/:slug/edit" element={<PrivateRoute><ArticleEditPage /></PrivateRoute>} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
