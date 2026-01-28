@@ -15,14 +15,16 @@ class ArticleResource extends JsonResource
     {
         // $this はコントローラーから渡された $article (Entity) を指します
         return [
-            'id'     => $this->id,
-            'title'  => $this->title,
+            'id'      => $this->id,
+            'user_id' => $this->userId,
+            'title'   => $this->title,
             'content' => $this->content,
-            'slug'   => $this->slug,
-            'status' => $this->status,
-            'views'  => $this->viewCount ?? 0, 
+            'slug'    => $this->slug,
+            'status'  => $this->status,
+            'views'   => $this->viewCount ?? 0, 
             // フロントエンドでそのまま表示できる形式に変換
             'created_at' => $this->createdAt?->format('Y/m/d H:i') ?? '不明',
+            'updated_at' => $this->updatedAt?->format('Y/m/d H:i') ?? '不明',
         ];
     }
 }

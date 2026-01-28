@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { Article } from '../types/api';
+import { useAuth } from '../contexts/AuthContext';
 
 
 const ArticleDetailPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
+    const { user } = useAuth(); // Contextからユーザー情報を取得
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
@@ -47,6 +49,9 @@ const ArticleDetailPage: React.FC = () => {
             alert(error.response?.data?.message || "削除に失敗しました。");
         }
     };
+
+    // 自分の記事か、または管理者か（後で拡張可能）を判定
+    const canEditOrDelete = user && article && (user.id === article.user_id || user.is_admin);
 
     if (loading) return <div className="text-center mt-10">読み込み中...</div>;
     if (!article) return null;
@@ -98,20 +103,23 @@ const ArticleDetailPage: React.FC = () => {
                         <div className="text-xs text-gray-400">
                             最終更新: {new Date(article.created_at).toLocaleDateString()}
                         </div>
-                        <div className="flex gap-4">
-                            <button 
-                                onClick={() => navigate(`/articles/${slug}/edit`)} // 編集ページへ
-                                className="px-5 py-2 text-sm font-semibold text-sky-600 border border-sky-600 rounded-lg hover:bg-sky-50 transition"
-                            >
-                                編集する
-                            </button>
-                            <button 
-                                onClick={handleDelete}
-                                className="px-5 py-2 text-sm font-semibold text-red-600 hover:text-red-700 transition"
-                            >
-                                削除
-                            </button>
-                        </div>
+                        {/* isOwner が true の場合のみボタンを表示 */}
+                        {canEditOrDelete && (
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => navigate(`/articles/${slug}/edit`)} // 編集ページへ
+                                    className="px-5 py-2 text-sm font-semibold text-sky-600 border border-sky-600 rounded-lg hover:bg-sky-50 transition"
+                                >
+                                    編集する
+                                </button>
+                                <button 
+                                    onClick={handleDelete}
+                                    className="px-5 py-2 text-sm font-semibold text-red-600 hover:text-red-700 transition"
+                                >
+                                    削除
+                                </button>
+                            </div>
+                        )}
                     </footer>
                 </article>
             </div>

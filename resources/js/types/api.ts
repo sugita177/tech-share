@@ -4,8 +4,16 @@ export interface LoginResponse {
     token_type: string;
 }
 
+export interface User {
+    id: number;
+    name: string;
+    email: string;
+    is_admin? : boolean;
+}
+
 export interface Article {
     id: number;
+    user_id: number;
     title: string;
     content: string;
     slug: string;

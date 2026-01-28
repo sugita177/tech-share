@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axiosClient from '../api/axiosClient';
+import { User } from '../types/api';
 
 interface AuthContextType {
     isAuthenticated: boolean;
-    login: (token: string) => void;
+    user: User | null;
+    login: (token: string) => Promise<void>; // ログイン後に情報を取得するためPromiseとする
     logout: () => void;
     loading: boolean;
 }
@@ -12,19 +14,37 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+
+    // ユーザー情報をサーバーから取得する関数
+    const fetchUser = async () => {
+        try {
+            const response = await axiosClient.get('/user'); // Laravelの auth:sanctum ルート
+            setUser(response.data);
+            setIsAuthenticated(true);
+        } catch (error) {
+            // トークンが無効な場合などはここに来る
+            localStorage.removeItem('access_token');
+            setIsAuthenticated(false);
+            setUser(null);
+        }
+    };
 
     useEffect(() => {
         // アプリ起動時にLocalStorageをチェック
         const token = localStorage.getItem('access_token');
         if (token) {
-            setIsAuthenticated(true);
+            fetchUser().finally(() => setLoading(false));
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
-    const login = (token: string) => {
+    const login = async (token: string) => {
         localStorage.setItem('access_token', token);
+        // トークンセット直後にユーザー情報を取得
+        await fetchUser();
         setIsAuthenticated(true);
     };
 
@@ -42,8 +62,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, login, logout, loading }}>
-            {!loading && children}
+        <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading }}>
+            {!loading ? children : <div className="text-center mt-20">認証確認中...</div>}
         </AuthContext.Provider>
     );
 };
