@@ -1,31 +1,23 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-    baseURL: '/api',
+    // VITE_API_BASE_URL を読み込む。未設定なら '/api' を使う
+    baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+    withCredentials: true,
     headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
     },
 });
 
-// リクエスト送信前に実行される「インターセプター」
-axiosClient.interceptors.request.use((config) => {
-    // ローカルストレージからトークンを取得してヘッダーにセット
-    const token = localStorage.getItem('access_token');
-    if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
-
-// レスポンス受信時に実行される「インターセプター」
+// ログイン状態が切れた（401）時の処理だけ残す
 axiosClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        // 401 (認証エラー) が返ってきたら、トークンを消してログイン画面へ
         if (error.response?.status === 401) {
-            localStorage.removeItem('access_token');
-            // 必要に応じて window.location.href = '/login' など
+            // クッキー方式ではトークン削除は不要ですが、
+            // 必要に応じて画面をリロードさせたり、ログイン画面へ飛ばします
+            // window.location.href = '/login';
         }
         return Promise.reject(error);
     }

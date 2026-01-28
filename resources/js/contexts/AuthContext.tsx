@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axiosClient from '../api/axiosClient';
+import axios from 'axios';
 import { User } from '../types/api';
 
 interface AuthContextType {
     isAuthenticated: boolean;
     user: User | null;
-    login: (token: string) => Promise<void>; // ログイン後に情報を取得するためPromiseとする
-    logout: () => void;
+    login: (credentials: { email: string; password: string }) => Promise<void>;
+    logout: () => Promise<void>;
     loading: boolean;
 }
 
@@ -25,7 +26,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setIsAuthenticated(true);
         } catch (error) {
             // トークンが無効な場合などはここに来る
-            localStorage.removeItem('access_token');
             setIsAuthenticated(false);
             setUser(null);
         }
@@ -41,11 +41,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
 
-    const login = async (token: string) => {
-        localStorage.setItem('access_token', token);
-        // トークンセット直後にユーザー情報を取得
-        await fetchUser();
-        setIsAuthenticated(true);
+    const login = async (credentials: { email: string; password: string }) => {
+        try {
+            // 1. CSRFクッキー取得
+            const csrfUrl = import.meta.env.VITE_SANCTUM_CSRF_URL;
+            await axios.get(csrfUrl, { withCredentials: true });
+
+            // 2. ログイン実行（ここで credentials = {email, password} を渡す）
+            await axiosClient.post('/login', credentials);
+
+            // 3. ユーザー情報取得
+            await fetchUser();
+        } catch (error) {
+            console.error("Login process failed", error);
+            throw error; // LoginPage側で catch できるように throw する
+        }
     };
 
     const logout = async () => {
@@ -56,7 +66,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.error('Logout API failed', error);
         } finally {
             // APIの成功失敗に関わらず、フロント側の情報は必ず消去する
-            localStorage.removeItem('access_token');
             setIsAuthenticated(false);
         }
     };

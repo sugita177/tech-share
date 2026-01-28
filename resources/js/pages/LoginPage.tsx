@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // 画面遷移用
-import axiosClient from '../api/axiosClient';
-import { type LoginResponse } from '../types/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
@@ -14,18 +12,18 @@ const LoginPage: React.FC = () => {
     React.useEffect(() => {
         if (isAuthenticated) navigate('/');
     }, [isAuthenticated, navigate]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            // LaravelのコントローラーへPOST
-            const response = await axiosClient.post<LoginResponse>('/login', { email, password });
-            // Contextのloginを呼ぶ
-            login(response.data.access_token);
-            // ログイン成功！記事一覧へ移動
-            navigate('/');
+            // コンテキストの login だけを呼ぶ。
+            // CSRF初期化、/login へのPOST、ユーザー情報の取得はすべてコンテキスト側が行います。
+            await login({ email, password });
 
+            // 成功したら移動
+            navigate('/');
         } catch (error: any) {
-            // バリデーションエラーや認証失敗のハンドリング
+            // エラーハンドリングはそのまま
             if (error.response?.status === 422) {
                 alert('メールアドレスまたはパスワードの形式が正しくありません');
             } else if (error.response?.status === 401) {
@@ -33,7 +31,6 @@ const LoginPage: React.FC = () => {
             } else {
                 alert('通信エラーが発生しました');
             }
-            console.error(error);
         }
     };
 

@@ -6,23 +6,30 @@ use App\Http\Controllers\Controller;
 use App\UseCases\Auth\LoginUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function login(Request $request, LoginUseCase $useCase): JsonResponse
+    public function login(Request $request)
     {
-        // 基本的なバリデーション
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        $token = $useCase->execute($credentials['email'], $credentials['password']);
+        // Auth::attempt でセッションを開始する（クッキーを作成）
+        if (!Auth::attempt($credentials)) {
+            throw ValidationException::withMessages([
+                'email' => ['認証情報が正しくありません。'],
+            ]);
+        }
 
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ]);
+        // セッションを再生成（固定セッション攻撃対策）
+        $request->session()->regenerate();
+
+        // トークンを返さず、成功ステータスのみを返す
+        return response()->noContent(); 
     }
 
     // ログアウト機能（現在のトークンを削除）
