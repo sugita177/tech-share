@@ -26,7 +26,9 @@ class AuthController extends Controller
         }
 
         // セッションを再生成（固定セッション攻撃対策）
-        $request->session()->regenerate();
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         // トークンを返さず、成功ステータスのみを返す
         return response()->noContent(); 
