@@ -6,19 +6,23 @@ use Illuminate\Support\Facades\Hash;
 
 uses(RefreshDatabase::class);
 
-test('正しい資格情報でログインでき、トークンが返されること', function () {
+test('正しい資格情報でログインできること', function () {
     $user = User::factory()->create([
         'email' => 'test@example.com',
         'password' => Hash::make('password123'),
     ]);
 
-    $response = $this->postJson('/api/login', [
+    // セッション機能を有効にしてリクエストを送る
+    $response = $this->withSession([])->postJson('/api/login', [
         'email' => 'test@example.com',
         'password' => 'password123',
     ]);
 
-    $response->assertStatus(200)
-             ->assertJsonStructure(['access_token', 'token_type']);
+    // 1. 期待するステータスコードを 204 に変更
+    $response->assertStatus(204);
+
+    // 2. トークンの検証は不要になったため削除し、認証状態を確認
+    $this->assertAuthenticatedAs($user);
 });
 
 test('間違ったパスワードではログインできないこと', function () {
