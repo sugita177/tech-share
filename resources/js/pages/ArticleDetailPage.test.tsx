@@ -17,31 +17,44 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
+// useAuth のモック
+const mockUseAuth = vi.fn();
+vi.mock('../contexts/AuthContext', () => ({
+    useAuth: () => mockUseAuth(),
+}));
+
+const renderComponent = (slug = 'test-slug') => {
+    return render(
+        <MemoryRouter initialEntries={[`/articles/${slug}`]}>
+            <Routes>
+                <Route path="/articles/:slug" element={<ArticleDetailPage />} />
+                <Route path="/" element={<div>Dashboard</div>} />
+            </Routes>
+        </MemoryRouter>
+    );
+};
+
+const mockArticle = {
+    id: 1,
+    user_id: 1,
+    title: 'テスト記事タイトル',
+    content: 'テスト記事の本文です。',
+    slug: 'test-slug',
+    created_at: '2024-01-01T00:00:00Z',
+};
+
 describe('ArticleDetailPage', () => {
-    const mockArticle = {
-        id: 1,
-        title: 'テスト記事タイトル',
-        content: 'テスト記事の本文です。',
-        slug: 'test-slug',
-        created_at: '2024-01-01T00:00:00Z',
-    };
 
     beforeEach(() => {
         vi.clearAllMocks();
         // window.alert は jsdom にないためモック化
         window.alert = vi.fn();
-    });
 
-    const renderComponent = (slug = 'test-slug') => {
-        return render(
-            <MemoryRouter initialEntries={[`/articles/${slug}`]}>
-                <Routes>
-                    <Route path="/articles/:slug" element={<ArticleDetailPage />} />
-                    <Route path="/" element={<div>Dashboard</div>} />
-                </Routes>
-            </MemoryRouter>
-        );
-    };
+        mockUseAuth.mockReturnValue({ 
+            user: { id: 1, name: 'Test User' },
+            loading: false 
+        });
+    });
 
     it('記事データが正常に取得され、画面に表示されること', async () => {
         (axiosClient.get as any).mockResolvedValue({
@@ -92,6 +105,12 @@ describe('ArticleDetailPage', () => {
         (axiosClient.get as any).mockResolvedValue({ data: { data: mockArticle } });
         (axiosClient.delete as any).mockResolvedValue({}); // 204想定なので空でOK
 
+        // ログインユーザーのIDも記事の作成者のidと同じ1にする
+        mockUseAuth.mockReturnValue({ 
+            user: { id: 1 }, 
+            loading: false 
+        });
+
         // confirmをモック化して true を返すように設定
         const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
@@ -112,5 +131,57 @@ describe('ArticleDetailPage', () => {
         });
 
         confirmSpy.mockRestore();
+    });
+});
+
+describe('権限による表示制御', () => {
+    const mockArticleWithOwner = {
+        ...mockArticle,
+        user_id: 10, // 記事の所有者IDを10とする
+    };
+
+    beforeEach(() => {
+        (axiosClient.get as any).mockResolvedValue({
+            data: { data: mockArticleWithOwner }
+        });
+    });
+
+    it('記事の所有者の場合、編集・削除ボタンが表示されること', async () => {
+        // ログインユーザーIDを記事の所有者ID(10)と一致させる
+        mockUseAuth.mockReturnValue({ user: { id: 10, is_admin: false } });
+        renderComponent();
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /編集する/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /削除/i })).toBeInTheDocument();
+        });
+    });
+
+    it('記事の所有者でない場合、編集・削除ボタンが表示されないこと', async () => {
+        // ログインユーザーIDを記事の所有者ID(10)と異なるものにする
+        mockUseAuth.mockReturnValue({ user: { id: 999, is_admin: false } });
+        renderComponent();
+        await waitFor(() => {
+            // queryByRole を使うことで、存在しない場合にエラーにならず null を返す
+            expect(screen.queryByRole('button', { name: /編集する/i })).not.toBeInTheDocument();
+            expect(screen.queryByRole('button', { name: /削除/i })).not.toBeInTheDocument();
+        });
+    });
+
+    it('管理者の場合、他人の記事でも編集・削除ボタンが表示されること', async () => {
+        // IDは違うが管理者の場合
+        mockUseAuth.mockReturnValue({ user: { id: 999, is_admin: true } });
+        renderComponent();
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /編集する/i })).toBeInTheDocument();
+        });
+    });
+
+    it('未ログインの場合、編集・削除ボタンが表示されないこと', async () => {
+        // user が null の場合
+        mockUseAuth.mockReturnValue({ user: null });
+        renderComponent();
+        await waitFor(() => {
+            expect(screen.queryByRole('button', { name: /編集する/i })).not.toBeInTheDocument();
+        });
     });
 });
