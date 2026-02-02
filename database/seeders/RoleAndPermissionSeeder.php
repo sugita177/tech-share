@@ -2,19 +2,31 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use App\Enums\RoleType;
 use App\Enums\PermissionType;
 
-public function run(): void
+class RoleAndPermissionSeeder extends Seeder
 {
-    // 権限の作成
-    Permission::create(['name' => PermissionType::EDIT_ANY_ARTICLE->value]);
+    public function run(): void
+    {
+        // 既存のキャッシュをクリア（権限変更時は必須）
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-    // ロールの作成と権限付与
-    $admin = Role::create(['name' => RoleType::ADMIN->value]);
-    $admin->givePermissionTo(PermissionType::EDIT_ANY_ARTICLE->value);
+        // 1. 権限の作成
+        Permission::create(['name' => PermissionType::EDIT_ANY_ARTICLE->value]);
+        Permission::create(['name' => PermissionType::DELETE_ANY_ARTICLE->value]); // これも追加しておきましょう
+
+        // 2. ロールの作成と権限付与
+        $admin = Role::create(['name' => RoleType::ADMIN->value]);
+        $admin->givePermissionTo([
+            PermissionType::EDIT_ANY_ARTICLE->value,
+            PermissionType::DELETE_ANY_ARTICLE->value,
+        ]);
+
+        // 一般ユーザーロール（権限なし）
+        Role::create(['name' => RoleType::USER->value]);
+    }
 }
