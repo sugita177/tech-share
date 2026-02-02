@@ -2,13 +2,14 @@
 
 namespace Tests\Feature\UseCases\Auth;
 
+use Tests\TestCase;
 use App\Models\User;
 use App\UseCases\Auth\LoginUseCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
-uses(RefreshDatabase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 test('execute: 正しいメールアドレスとパスワードでトークンが返されること', function () {
     // 1. 準備
