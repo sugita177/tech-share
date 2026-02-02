@@ -4,6 +4,8 @@ namespace App\UseCases\Article;
 
 use App\Domain\Entities\Article;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
+use App\Domain\Interfaces\PermissionServiceInterface;
+use App\Enums\PermissionType;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -11,7 +13,8 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 class UpdateArticleUseCase
 {
     public function __construct(
-        private ArticleRepositoryInterface $repository
+        private ArticleRepositoryInterface $repository,
+        private PermissionServiceInterface $permissionService
     ) {}
 
     public function execute(UpdateArticleInput $input): Article
@@ -22,8 +25,13 @@ class UpdateArticleUseCase
             throw new ModelNotFoundException();
         }
 
-        // 認可チェック：記事の作成者と、リクエストしたユーザーが一致するか
-        if ($currentArticle->userId !== $input->userId) {
+        // 認可チェック
+        $canUserUpdateArticle = $this->permissionService->canUserPerformAction(
+            $input->userId, 
+            PermissionType::EDIT_ANY_ARTICLE, 
+            $currentArticle
+        );
+        if (!$canUserUpdateArticle) {
             throw new AccessDeniedHttpException('この記事を編集する権限がありません。');
         }
 
