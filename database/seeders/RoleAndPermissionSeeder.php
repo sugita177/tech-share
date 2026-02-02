@@ -17,7 +17,7 @@ class RoleAndPermissionSeeder extends Seeder
 
         // 1. 権限の作成
         Permission::create(['name' => PermissionType::EDIT_ANY_ARTICLE->value]);
-        Permission::create(['name' => PermissionType::DELETE_ANY_ARTICLE->value]); // これも追加しておきましょう
+        Permission::create(['name' => PermissionType::DELETE_ANY_ARTICLE->value]);
 
         // 2. ロールの作成と権限付与
         $admin = Role::create(['name' => RoleType::ADMIN->value]);
