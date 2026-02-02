@@ -29,7 +29,7 @@ class DeleteArticleUseCase
             $article
         );
         if (!$canUserDeleteArticle) {
-            throw new AccessDeniedHttpException('この記事をする削除する権限がありません。');
+            throw new AccessDeniedHttpException('この記事を削除する権限がありません。');
         }
 
         $this->repository->delete($id);
