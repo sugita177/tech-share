@@ -6,6 +6,7 @@ use App\Domain\Entities\Article as ArticleEntity;
 use App\UseCases\Article\DeleteArticleUseCase;
 use App\Domain\Enums\ArticleStatus;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
+use App\Domain\Interfaces\PermissionServiceInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Mockery;
 use Mockery\MockInterface;
@@ -17,6 +18,9 @@ test('execute: 指定したIDがリポジトリの削除メソッドに渡され
     
     /** @var ArticleRepositoryInterface|MockInterface $repository */
     $repository = Mockery::mock(ArticleRepositoryInterface::class);
+
+    /** @var PermissionServiceInterface|MockInterface $permissionService */
+    $permissionService = Mockery::mock(PermissionServiceInterface::class);
 
     // 1. 認可チェック用の findById を定義
     $repository->shouldReceive('findById')
@@ -30,6 +34,9 @@ test('execute: 指定したIDがリポジトリの削除メソッドに渡され
             content: '...',
             status: ArticleStatus::Published
         ));
+
+    $permissionService->shouldReceive('canUserPerformAction')
+        ->andReturn(true);
     
     // delete メソッドが指定した ID で 1 回呼ばれることを期待
     $repository->shouldReceive('delete')
@@ -37,7 +44,7 @@ test('execute: 指定したIDがリポジトリの削除メソッドに渡され
         ->with($articleId)
         ->andReturnNull();
 
-    $useCase = new DeleteArticleUseCase($repository);
+    $useCase = new DeleteArticleUseCase($repository, $permissionService);
 
     // 2. 実行
     $useCase->execute($articleId, $currentUserId);
@@ -54,6 +61,9 @@ test('execute: リポジトリで例外が発生した場合、そのまま例�
     /** @var ArticleRepositoryInterface|MockInterface $repository */
     $repository = Mockery::mock(ArticleRepositoryInterface::class);
 
+    /** @var PermissionServiceInterface|MockInterface $permissionService */
+    $permissionService = Mockery::mock(PermissionServiceInterface::class);
+
     // 認可チェックをパスさせるために findById は成功させる
     $repository->shouldReceive('findById')
         ->once()
@@ -66,13 +76,16 @@ test('execute: リポジトリで例外が発生した場合、そのまま例�
             content: '...',
             status: ArticleStatus::Published
         ));
+
+    $permissionService->shouldReceive('canUserPerformAction')
+        ->andReturn(true);
     
     // リポジトリが例外を投げるように設定
     $repository->shouldReceive('delete')
         ->with($articleId)
         ->andThrow(new ModelNotFoundException());
 
-    $useCase = new DeleteArticleUseCase($repository);
+    $useCase = new DeleteArticleUseCase($repository, $permissionService);
 
     // 2. 実行 & 3. 検証
     expect(fn() => $useCase->execute($articleId, $userId))

@@ -2,13 +2,18 @@
 
 use App\Models\User;
 use App\Models\Article as EloquentArticle;
+use App\Enums\RoleType;
+use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+
+beforeEach(function () {
+    // 権限とロールを初期化
+    $this->seed(RoleAndPermissionSeeder::class);
+});
 
 uses(RefreshDatabase::class); // テストごとにDBをリセット
 
 test('API経由で記事を作成できる', function () {
-    //$this->withoutExceptionHandling(); // これを追加して実行すると、詳細なエラーが出ます
-
     // テスト用ユーザーを作成
     $user = User::factory()->create();
 
@@ -185,4 +190,33 @@ test('存在しない記事を削除しようとすると404が返ること', fu
         ->deleteJson("/api/articles/9999");
 
     $response->assertStatus(404);
+});
+
+test('管理者は他のユーザーの記事を更新できること', function () {
+    // 1. 準備
+    $admin = User::factory()->create();
+    $admin->assignRole(RoleType::ADMIN->value); // 管理者ロールを付与
+
+    $otherUser = User::factory()->create();
+    $article = EloquentArticle::factory()->create([
+        'user_id' => $otherUser->id,
+        'title'   => '他人の記事'
+    ]);
+
+    $payload = [
+        'title'   => '管理者が修正しました',
+        'content' => '本文',
+        'status'  => 'published'
+    ];
+
+    // 2. 実行
+    $response = $this->actingAs($admin)
+                     ->putJson("/api/articles/{$article->id}", $payload);
+
+    // 3. 検証
+    $response->assertStatus(200);
+    $this->assertDatabaseHas('articles', [
+        'id'    => $article->id,
+        'title' => '管理者が修正しました'
+    ]);
 });
