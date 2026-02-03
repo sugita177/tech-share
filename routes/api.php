@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ArticleController;
+use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -11,7 +12,7 @@ Route::post('/login', [AuthController::class, 'login']);
 // 認証必須ルート
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        return new UserResource($request->user());
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/articles', [ArticleController::class, 'index']);
