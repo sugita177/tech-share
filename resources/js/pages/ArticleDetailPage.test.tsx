@@ -141,6 +141,7 @@ describe('権限による表示制御', () => {
     };
 
     beforeEach(() => {
+        vi.clearAllMocks();
         (axiosClient.get as any).mockResolvedValue({
             data: { data: mockArticleWithOwner }
         });
@@ -182,6 +183,71 @@ describe('権限による表示制御', () => {
         renderComponent();
         await waitFor(() => {
             expect(screen.queryByRole('button', { name: /編集する/i })).not.toBeInTheDocument();
+        });
+    });
+});
+
+describe('追加の検証シナリオ', () => {
+    const mockArticleOther = {
+        ...mockArticle,
+        user_id: 99, // 自分以外のID
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (axiosClient.get as any).mockResolvedValue({ data: { data: mockArticleOther } });
+    });
+
+    it('管理者が他人の記事を閲覧している場合、「管理者モード」バッジが表示されること', async () => {
+        // 管理者で、記事の所有者ではない状態
+        mockUseAuth.mockReturnValue({ user: { id: 1, is_admin: true }, loading: false });
+
+        renderComponent();
+
+        await waitFor(() => {
+            expect(screen.getByText(/管理者モードで閲覧中/i)).toBeInTheDocument();
+        });
+    });
+
+    it('削除確認ダイアログでキャンセルを押した場合、削除APIが呼ばれないこと', async () => {
+        mockUseAuth.mockReturnValue({ user: { id: 1, is_admin: true }, loading: false });
+        
+        // confirm で false (キャンセル) を返す
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+        renderComponent();
+        await screen.findByText('テスト記事タイトル');
+
+        const deleteButton = screen.getByRole('button', { name: /削除/i });
+        fireEvent.click(deleteButton);
+
+        expect(confirmSpy).toHaveBeenCalled();
+        // APIが呼ばれていないことを検証（フェイルセーフの確認）
+        expect(axiosClient.delete).not.toHaveBeenCalled();
+        
+        confirmSpy.mockRestore();
+    });
+
+    it('削除APIが失敗した場合、エラーアラートが表示されること', async () => {
+        mockUseAuth.mockReturnValue({ user: { id: 1, is_admin: true }, loading: false });
+        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        
+        // 削除APIの失敗をシミュレート
+        const errorMessage = "サーバーエラーが発生しました";
+        (axiosClient.delete as any).mockRejectedValue({
+            response: { data: { message: errorMessage } }
+        });
+
+        renderComponent();
+        await screen.findByText('テスト記事タイトル');
+
+        const deleteButton = screen.getByRole('button', { name: /削除/i });
+        fireEvent.click(deleteButton);
+
+        await waitFor(() => {
+            expect(window.alert).toHaveBeenCalledWith(errorMessage);
+            // 失敗時はリダイレクトされないことも確認
+            expect(mockNavigate).not.toHaveBeenCalledWith('/');
         });
     });
 });
