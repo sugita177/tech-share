@@ -22,7 +22,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const fetchUser = async () => {
         try {
             const response = await axiosClient.get('/user'); // Laravelの auth:sanctum ルート
-            setUser(response.data);
+            // response.data.data があればそれを、なければ response.data をセットする
+            setUser(response.data.data || response.data);
             setIsAuthenticated(true);
         } catch (error) {
             // トークンが無効な場合などはここに来る
