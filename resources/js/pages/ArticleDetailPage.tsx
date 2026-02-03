@@ -74,9 +74,17 @@ const ArticleDetailPage: React.FC = () => {
 
                     {/* ヘッダー部分に薄いアクセントを付ける場合 */}
                     <header className="p-8 pb-6 border-b border-gray-100">
-                        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-4">
-                            {article.title}
-                        </h1>
+                        <div className="flex justify-between items-start mb-4">
+                            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-4">
+                                {article.title}
+                            </h1>
+                            {/* 管理者かつ他人の記事の場合にバッジを表示 */}
+                            {user?.is_admin && user.id !== article.user_id && (
+                                <span className="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                                    管理者モードで閲覧中
+                                </span>
+                            )}
+                        </div>
                         <div className="flex items-center text-sm text-gray-500">
                             <span className="bg-sky-50 text-sky-700 px-2 py-1 rounded md mr-3">
                                 公開済み
