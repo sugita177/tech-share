@@ -20,9 +20,9 @@ readonly class Article
     ) {}
 
     // ビジネスロジックをここに書くことができる
-    // 例：公開済みかどうかを判定
+    // 公開済みかどうかを判定
     public function isPublished(): bool
     {
-        return $this->status === 'published';
+        return $this->status === ArticleStatus::Published;
     }
 }
