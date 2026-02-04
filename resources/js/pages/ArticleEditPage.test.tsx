@@ -7,6 +7,12 @@ import axiosClient from '../api/axiosClient';
 // axios のモック
 vi.mock('../api/axiosClient');
 
+// useAuthのモック
+const mockUseAuth = vi.fn();
+vi.mock('../contexts/AuthContext', () => ({
+    useAuth: () => mockUseAuth(),
+}));
+
 // navigate のモック
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
@@ -17,29 +23,37 @@ vi.mock('react-router-dom', async () => {
     };
 });
 
+const mockArticle = {
+    id: 10,
+    user_id: 1,
+    title: '元のタイトル',
+    content: '元の本文',
+    slug: 'original-slug',
+    status: 'draft',
+};
+
+const renderComponent = (slug = 'original-slug') => {
+    return render(
+        <MemoryRouter initialEntries={[`/articles/${slug}/edit`]}>
+            <Routes>
+                <Route path="/articles/:slug/edit" element={<ArticleEditPage />} />
+            </Routes>
+        </MemoryRouter>
+    );
+};
+
 describe('ArticleEditPage', () => {
-    const mockArticle = {
-        id: 10,
-        title: '元のタイトル',
-        content: '元の本文',
-        slug: 'original-slug',
-        status: 'draft',
-    };
 
     beforeEach(() => {
         vi.clearAllMocks();
         window.alert = vi.fn();
-    });
 
-    const renderComponent = (slug = 'original-slug') => {
-        return render(
-            <MemoryRouter initialEntries={[`/articles/${slug}/edit`]}>
-                <Routes>
-                    <Route path="/articles/:slug/edit" element={<ArticleEditPage />} />
-                </Routes>
-            </MemoryRouter>
-        );
-    };
+        // 認証状態のデフォルトをセット（ガードを突破させる）
+        mockUseAuth.mockReturnValue({ 
+            user: { id: 1, is_admin: false }, 
+            loading: false 
+        });
+    });
 
     it('初期表示で既存の記事データがフォームにセットされること', async () => {
         (axiosClient.get as any).mockResolvedValue({ data: { data: mockArticle } });
@@ -114,5 +128,63 @@ describe('ArticleEditPage', () => {
         fireEvent.click(screen.getByRole('button', { name: /キャンセルして戻る/i }));
 
         expect(mockNavigate).toHaveBeenCalledWith(-1);
+    });
+});
+
+describe('認可ガード（アクセス制限）のテスト', () => {
+    const mockArticleOtherOwner = {
+        ...mockArticle,
+        user_id: 999, // 自分（ID:1）ではない所有者
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('本人でも管理者でもない場合、アラートを表示して詳細画面へリダイレクトされること', async () => {
+        // 1. 準備：一般ユーザー（所有者ではない）
+        mockUseAuth.mockReturnValue({
+            user: { id: 1, is_admin: false },
+            loading: false
+        });
+        (axiosClient.get as any).mockResolvedValue({ data: { data: mockArticleOtherOwner } });
+
+        renderComponent('other-slug');
+
+        // 2. 検証
+        await waitFor(() => {
+            expect(window.alert).toHaveBeenCalledWith('この記事を編集する権限がありません。');
+            expect(mockNavigate).toHaveBeenCalledWith('/articles/other-slug');
+        });
+    });
+
+    it('所有者ではなくても、管理者であれば編集画面を表示できること', async () => {
+        // 1. 準備：管理者（所有者ではない）
+        mockUseAuth.mockReturnValue({
+            user: { id: 1, is_admin: true },
+            loading: false
+        });
+        (axiosClient.get as any).mockResolvedValue({ data: { data: mockArticleOtherOwner } });
+
+        renderComponent('other-slug');
+
+        // 2. 検証：リダイレクトされず、フォームのデータが表示されること
+        await waitFor(() => {
+            expect(screen.getByDisplayValue('元のタイトル')).toBeInTheDocument();
+        });
+        expect(mockNavigate).not.toHaveBeenCalledWith('/articles/other-slug');
+    });
+
+    it('認証チェック中（loading: true）は、読み込み画面が表示されること', () => {
+        // 準備：ロード中状態
+        mockUseAuth.mockReturnValue({
+            user: null,
+            loading: true
+        });
+
+        renderComponent();
+
+        // 検証
+        expect(screen.getByText(/読み込み中.../i)).toBeInTheDocument();
     });
 });
