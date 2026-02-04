@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
+import { useAuth } from '../contexts/AuthContext';
 
 const ArticleEditPage: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
+    const { user, loading: authLoading } = useAuth();
 
     const [id, setId] = useState<number | null>(null); // 更新にはIDが必要
     const [title, setTitle] = useState('');
@@ -20,6 +22,19 @@ const ArticleEditPage: React.FC = () => {
             try {
                 const response = await axiosClient.get(`/articles/${slug}`);
                 const article = response.data.data;
+
+                // ガード処理：認証ロードが終わり、記事データが取れたタイミングで判定
+                if (!authLoading) {
+                    const isOwner = user && user.id === article.user_id;
+                    const isAdmin = user && user.is_admin;
+
+                    if (!isOwner && !isAdmin) {
+                        alert('この記事を編集する権限がありません。');
+                        navigate(`/articles/${slug}`); // 詳細画面へ戻す
+                        return;
+                    }
+                }
+                
                 setId(article.id);
                 setTitle(article.title);
                 setContent(article.content);
