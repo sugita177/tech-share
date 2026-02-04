@@ -13,7 +13,7 @@ const ArticleCreatePage: React.FC = () => {
         setIsSubmitting(true);
 
         try {
-            // すでに作成済みのAPIへPOST
+            // APIへPOST
             await axiosClient.post('/articles', { title, content });
             alert('記事を投稿しました！');
             navigate('/'); // 投稿後は一覧へ
