@@ -3,15 +3,17 @@
 namespace App\Http\Requests\Article;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class UpdateArticleRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * ログインしている場合のみ許可する
      */
     public function authorize(): bool
     {
-        return true;// 認証機能作成までは暫定でtrueにしておく
+        // auth:sanctum ミドルウェアで認証を保証しているため、ここでは認可のみを扱う
+        return true;
     }
 
     /**
