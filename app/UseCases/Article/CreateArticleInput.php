@@ -10,8 +10,8 @@ readonly class CreateArticleInput
         public int $userId,
         public string $title,
         public string $content,
-        public ?string $slug = null,
         public ArticleStatus $status,
+        public ?string $slug = null,
     ) {}
 
     /**
