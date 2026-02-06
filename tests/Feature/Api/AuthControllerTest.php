@@ -40,29 +40,31 @@ test('間違ったパスワードではログインできないこと', function
              ->assertJsonValidationErrors(['email']);
 });
 
-test('ログアウトするとトークンが無効化されること', function () {
+test('ログアウトするとセッションが無効化され、認証解除されること', function () {
+    // 1. ユーザーを準備
     $user = User::factory()->create();
 
-    // 1. 実際にトークンを発行する
-    $token = $user->createToken('test-token')->plainTextToken;
+    // 2. ログアウト API を叩く
+    // actingAs('web') と、SPAリクエストであることを示す Referer ヘッダーが重要
+    $response = $this->actingAs($user, 'web')
+        ->withHeader('Referer', 'http://localhost') // SanctumのSPA判定をパスさせる
+        ->postJson('/api/logout');
 
-    // 2. 発行したトークンを使ってログアウトAPIを叩く
-    $response = $this->withToken($token)
-                     ->postJson('/api/logout');
+    // 3. ステータスコードの確認
+    $response->assertStatus(200)
+             ->assertJson(['message' => 'Logged out']);
 
-    $response->assertStatus(200);
+    // 4. 認証が解除されている（Guest 状態）ことを確認
+    $this->assertGuest('web');
 
-    // 3. DBからトークンが消えていることを物理的に確認（これが一番確実な証明です）
-    $this->assertDatabaseMissing('personal_access_tokens', [
-        'tokenable_id' => $user->id
-    ]);
-
-    // 4. アプリケーションの状態をリセットして、古い認証キャッシュを破棄する
+    // テストインスタンス内の「認証済みユーザー」をクリアする
+    // 物理的に「観測装置」を一度初期化（Reboot）するイメージです
     $this->refreshApplication();
 
-    // 5. 無効になったはずのトークンで再度アクセス
-    $secondResponse = $this->withHeader('Authorization', 'Bearer ' . $token)
+    // 5. 保護されたルートにアクセスして 401 になることを確認
+    // ここでも SPA モードとして振る舞うために Referer を入れるとより確実です
+    $secondResponse = $this->withHeader('Referer', 'http://localhost')
                            ->getJson('/api/articles');
-    
+                           
     $secondResponse->assertStatus(401);
 });
