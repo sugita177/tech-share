@@ -34,16 +34,16 @@ class AuthController extends Controller
         return response()->noContent(); 
     }
 
-    // ログアウト機能（現在のトークンを削除）
     public function logout(Request $request): JsonResponse
     {
-        // 現在のトークンを取得
-        $token = $request->user()->currentAccessToken();
+        // 1. Webガード（セッション）からログアウト
+        Auth::guard('web')->logout();
     
-        // トークンが PersonalAccessToken (DB保存) の場合のみ削除を実行
-        if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
-            $token->delete();
-        }
+        // 2. 現在のセッションを無効化（サーバー側のセッションデータを破棄）
+        $request->session()->invalidate();
+    
+        // 3. CSRFトークンを再生成（セッション固定攻撃対策）
+        $request->session()->regenerateToken();
     
         return response()->json(['message' => 'Logged out']);
     }
