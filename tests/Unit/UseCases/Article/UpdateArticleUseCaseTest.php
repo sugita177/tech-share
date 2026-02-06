@@ -7,6 +7,7 @@ use App\Domain\Entities\Article;
 use App\Domain\Enums\ArticleStatus;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
 use App\Domain\Interfaces\PermissionServiceInterface;
+use App\Domain\Interfaces\TransactionManagerInterface;
 use App\Enums\PermissionType;
 use App\UseCases\Article\UpdateArticleInput;
 use App\UseCases\Article\UpdateArticleUseCase;
@@ -20,6 +21,16 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 beforeEach(function () {
     $this->repository = Mockery::mock(ArticleRepositoryInterface::class);
     $this->permissionService = Mockery::mock(PermissionServiceInterface::class);
+    $this->transactionManager = Mockery::mock(TransactionManagerInterface::class);
+
+    // TransactionManagerのモック設定
+    $this->transactionManager
+        ->shouldReceive('run')
+        ->andReturnUsing(function ($callback) {
+            // runメソッドに渡されたクロージャ($callback)を
+            // そのまま実行して、その結果を返す
+            return $callback();
+        });
 });
 
 describe('純粋なロジックのテスト', function () {
@@ -42,7 +53,7 @@ describe('純粋なロジックのテスト', function () {
         $this->repository->shouldReceive('update')->once()->andReturn($updatedEntity);
     
         // インスタンス化時に両方のモックを渡す
-        $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService);
+        $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService, $this->transactionManager);
         
         $input = new UpdateArticleInput(id: $articleId, userId: $userId, title: '新', content: '..', slug: 'new', status: ArticleStatus::Published);
     
@@ -74,7 +85,7 @@ describe('純粋なロジックのテスト', function () {
             $this->repository->shouldReceive('existsBySlug')->andReturn(false);
             $this->repository->shouldReceive('update')->andReturn($article);
     
-            $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService);
+            $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService, $this->transactionManager);
             $input = new UpdateArticleInput(
                 id: 1, 
                 userId: 10, 
@@ -102,7 +113,7 @@ describe('純粋なロジックのテスト', function () {
             $this->repository->shouldReceive('existsBySlug')->andReturn(false);
             $this->repository->shouldReceive('update')->andReturn($article);
     
-            $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService);
+            $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService, $this->transactionManager);
             $input = new UpdateArticleInput(
                 id: 1,
                 userId: $adminId,
@@ -128,7 +139,7 @@ describe('純粋なロジックのテスト', function () {
                 ->with($strangerId, PermissionType::EDIT_ANY_ARTICLE, $article)
                 ->andReturn(false);
     
-            $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService);
+            $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService, $this->transactionManager);
             $input = new UpdateArticleInput(
                 id: 1,
                 userId: $strangerId,
@@ -146,7 +157,7 @@ describe('純粋なロジックのテスト', function () {
     test('execute: 更新対象の記事が存在しない場合、ModelNotFoundExceptionを投げること', function () {
         $this->repository->shouldReceive('findById')->andReturn(null);
     
-        $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService);
+        $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService, $this->transactionManager);
         $input = new UpdateArticleInput(
                 id: 999,
                 userId: 1,
@@ -176,7 +187,7 @@ describe('Laravelコンテナが必要なテスト', function () {
         // 認可は通す
         $this->permissionService->shouldReceive('canUserPerformAction')->andReturn(true);
 
-        $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService);
+        $useCase = new UpdateArticleUseCase($this->repository, $this->permissionService, $this->transactionManager);
         $input = new UpdateArticleInput(
                 id: 1,
                 userId: 1,
