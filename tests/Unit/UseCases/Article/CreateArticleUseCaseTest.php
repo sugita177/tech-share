@@ -6,6 +6,7 @@ use Tests\TestCase;
 use App\UseCases\Article\CreateArticleUseCase;
 use App\UseCases\Article\CreateArticleInput;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
+use App\Domain\Interfaces\TransactionManagerInterface;
 use App\Domain\Entities\Article;
 use App\Domain\Enums\ArticleStatus;
 use RuntimeException;
@@ -13,6 +14,19 @@ use Mockery;
 use Mockery\MockInterface;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+
+beforeEach(function () {
+    $this->transactionManager = Mockery::mock(TransactionManagerInterface::class);
+
+    // TransactionManagerのモック設定
+    $this->transactionManager
+        ->shouldReceive('run')
+        ->andReturnUsing(function ($callback) {
+            // runメソッドに渡されたクロージャ($callback)を
+            // そのまま実行して、その結果を返す
+            return $callback();
+        });
+});
 
 describe('純粋なロジックのテスト', function () {
     /**
@@ -39,7 +53,7 @@ describe('純粋なロジックのテスト', function () {
             ->once()
             ->andReturnUsing(fn (Article $article) => $article);
 
-        $useCase = new CreateArticleUseCase($repository);
+        $useCase = new CreateArticleUseCase($repository, $this->transactionManager);
         $result = $useCase->execute($input);
 
         expect($result->slug)->toBe('user-custom-slug');
@@ -63,7 +77,7 @@ describe('純粋なロジックのテスト', function () {
 
         $repository->shouldReceive('save')->once()->andReturnUsing(fn ($a) => $a);
 
-        $useCase = new CreateArticleUseCase($repository);
+        $useCase = new CreateArticleUseCase($repository, $this->transactionManager);
         $result = $useCase->execute($input);
 
         expect($result->slug)->toHaveLength(14);
@@ -88,7 +102,7 @@ describe('純粋なロジックのテスト', function () {
             ->times(10) // 最大試行回数
             ->andReturn(true);
 
-        $useCase = new CreateArticleUseCase($repository);
+        $useCase = new CreateArticleUseCase($repository, $this->transactionManager);
 
         expect(fn() => $useCase->execute($input))
             ->toThrow(RuntimeException::class, 'スラグの自動生成に失敗しました。');
@@ -122,7 +136,7 @@ describe('Laravelコンテナが必要なテスト', function () {
         // 保存処理は呼ばれない
         $repository->shouldNotReceive('save');
 
-        $useCase = new CreateArticleUseCase($repository);
+        $useCase = new CreateArticleUseCase($repository, $this->transactionManager);
 
         // 例外の検証
         expect(fn() => $useCase->execute($input))
