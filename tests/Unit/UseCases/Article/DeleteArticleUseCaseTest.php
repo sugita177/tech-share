@@ -7,6 +7,7 @@ use App\UseCases\Article\DeleteArticleUseCase;
 use App\Domain\Enums\ArticleStatus;
 use App\Domain\Interfaces\ArticleRepositoryInterface;
 use App\Domain\Interfaces\PermissionServiceInterface;
+use App\Domain\Interfaces\TransactionManagerInterface;
 use App\Enums\PermissionType;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -15,7 +16,18 @@ use Mockery;
 beforeEach(function () {
     $this->repository = Mockery::mock(ArticleRepositoryInterface::class);
     $this->permissionService = Mockery::mock(PermissionServiceInterface::class);
-    $this->useCase = new DeleteArticleUseCase($this->repository, $this->permissionService);
+    $this->transactionManager = Mockery::mock(TransactionManagerInterface::class);
+
+    // TransactionManagerのモック設定
+    $this->transactionManager
+        ->shouldReceive('run')
+        ->andReturnUsing(function ($callback) {
+            // runメソッドに渡されたクロージャ($callback)を
+            // そのまま実行して、その結果を返す
+            return $callback();
+        });
+    
+    $this->useCase = new DeleteArticleUseCase($this->repository, $this->permissionService, $this->transactionManager);
 
     // 共通のダミー記事Entity
     $this->dummyArticle = new ArticleEntity(
