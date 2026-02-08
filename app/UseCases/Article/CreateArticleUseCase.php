@@ -66,7 +66,6 @@ class CreateArticleUseCase
             );
 
             // Repositoryを介して保存
-            // ここで将来的に「投稿後にSlack通知を送るJobをディスパッチする」などの処理も追加できます
             return $this->repository->save($article);
         });
     }
