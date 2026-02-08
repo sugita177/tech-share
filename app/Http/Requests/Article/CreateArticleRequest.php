@@ -35,8 +35,8 @@ class CreateArticleRequest extends FormRequest
         /** @var User $user */
         $user = $this->user();
 
-        // 文字列から Enum への変換。指定がなければ Publishedをデフォルトにする
-        $status = ArticleStatus::tryFrom($this->validated('status')) ?? ArticleStatus::Published;
+        // 文字列から Enum への変換。指定がなければ Draftをデフォルトにする
+        $status = ArticleStatus::tryFrom($this->validated('status')) ?? ArticleStatus::Draft;
 
         return new CreateArticleInput(
             userId: $this->user()->id,
