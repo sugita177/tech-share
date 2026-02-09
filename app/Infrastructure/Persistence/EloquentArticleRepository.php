@@ -43,12 +43,21 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
         $model->delete();
     }
 
-    public function paginate(int $perPage = 10): LengthAwarePaginator
+    public function paginate(int $perPage = 10, ?ArticleStatus $status = null): LengthAwarePaginator
     {
-        $paginator = EloquentArticle::latest()->paginate($perPage);
+        // クエリビルダーを開始
+        $query = EloquentArticle::latest();
 
-        // EloquentモデルのコレクションをEntityのコレクションに変換
-        // ページネーション情報を維持したまま中身だけ入れ替えます
+        // ステータス指定があればフィルタリング（観測条件の適用）
+        if ($status) {
+            $query->where('status', $status->value);
+        }
+
+        // 実行（ページネーション）
+        $paginator = $query->paginate($perPage);
+
+        // Entityへの変換
+        // ページネーション情報を維持したまま中身だけ入れ替える
         $paginator->getCollection()->transform(fn($model) => $this->toEntity($model));
 
         return $paginator;

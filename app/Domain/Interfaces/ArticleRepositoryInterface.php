@@ -3,6 +3,7 @@
 namespace App\Domain\Interfaces;
 
 use App\Domain\Entities\Article;
+use App\Domain\Enums\ArticleStatus;
 use Illuminate\Support\Collection;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -17,7 +18,7 @@ interface ArticleRepositoryInterface
     /**
      * ページングして複数記事を取得
      */
-    public function paginate(int $perPage = 10): LengthAwarePaginator;
+    public function paginate(int $perPage = 10, ?ArticleStatus $status = null): LengthAwarePaginator;
 
     /**
      * 記事を保存（新規作成・更新両用）

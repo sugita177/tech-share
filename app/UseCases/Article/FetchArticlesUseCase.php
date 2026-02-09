@@ -3,6 +3,7 @@
 namespace App\UseCases\Article;
 
 use App\Domain\Interfaces\ArticleRepositoryInterface;
+use App\Domain\Enums\ArticleStatus;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class FetchArticlesUseCase
@@ -13,6 +14,7 @@ class FetchArticlesUseCase
 
     public function execute(int $perPage = 10): LengthAwarePaginator
     {
-        return $this->repository->paginate($perPage);
+        //「公開済み (Published)」を指定する
+        return $this->repository->paginate($perPage, ArticleStatus::Published);
     }
 }
