@@ -101,6 +101,48 @@ test('paginate: 最新の記事が先頭（降順）で取得されること', f
     expect($result->items()[1]->title)->toBe('古い記事');
 });
 
+test('paginate: 指定したステータスの記事のみが取得されること', function () {
+    // 1. 準備：公開記事と草稿を混ぜて作成
+    $user = User::factory()->create();
+    
+    EloquentArticle::factory()->create([
+        'user_id' => $user->id,
+        'title' => '公開記事だよ',
+        'status' => ArticleStatus::Published
+    ]);
+    
+    EloquentArticle::factory()->create([
+        'user_id' => $user->id,
+        'title' => 'まだ下書きだよ',
+        'status' => ArticleStatus::Draft
+    ]);
+
+    // 2. 実行：ステータス「Published」を指定して取得
+    $result = $this->repository->paginate(10, ArticleStatus::Published);
+
+    // 3. 検証
+    // 取得できたのは1件だけであること
+    expect($result->items())->toHaveCount(1);
+    // その1件は「公開記事」であること
+    expect($result->items()[0]->title)->toBe('公開記事だよ');
+    // ステータスがPublishedであること
+    expect($result->items()[0]->status)->toBe(ArticleStatus::Published);
+});
+
+test('paginate: 下書きを指定した場合、公開記事が含まれないこと', function () {
+    // 1. 準備
+    $user = User::factory()->create();
+    EloquentArticle::factory()->create(['status' => ArticleStatus::Published, 'user_id' => $user->id]);
+    EloquentArticle::factory()->create(['status' => ArticleStatus::Draft, 'user_id' => $user->id]);
+
+    // 2. 実行
+    $result = $this->repository->paginate(10, ArticleStatus::Draft);
+
+    // 3. 検証
+    expect($result->items())->toHaveCount(1);
+    expect($result->items()[0]->status)->toBe(ArticleStatus::Draft);
+});
+
 test('findBySlug: 指定したスラグの記事をEntityとして取得できること', function () {
     // 1. 準備
     $user = User::factory()->create();
