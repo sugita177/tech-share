@@ -1,14 +1,14 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import DashboardPage from './DashboardPage';
+import TimelinePage from './TimelinePage';
 import axiosClient from '../api/axiosClient';
 import { AuthContext } from '../contexts/AuthContext';
 
 // axios のモック
 vi.mock('../api/axiosClient');
 
-describe('DashboardPage', () => {
+describe('TimelinePage', () => {
     // window.scrollTo は jsdom に存在しないためモック化
     window.scrollTo = vi.fn();
 
@@ -28,13 +28,14 @@ describe('DashboardPage', () => {
     const renderDashboard = () => {
         return render(
             <AuthContext.Provider value={{ 
+                user: null,
                 login: vi.fn(), 
                 logout: vi.fn(), 
                 isAuthenticated: true, 
                 loading: false 
             }}>
                 <BrowserRouter>
-                    <DashboardPage />
+                    <TimelinePage />
                 </BrowserRouter>
             </AuthContext.Provider>
         );
@@ -84,14 +85,15 @@ describe('DashboardPage', () => {
         (axiosClient.get as any).mockResolvedValue(mockPaginationResponse);
 
         render(
-            <AuthContext.Provider value={{ 
+            <AuthContext.Provider value={{
+                user: null,
                 login: vi.fn(), 
                 logout: mockLogout, 
                 isAuthenticated: true, 
                 loading: false 
             }}>
                 <BrowserRouter>
-                    <DashboardPage />
+                    <TimelinePage />
                 </BrowserRouter>
             </AuthContext.Provider>
         );

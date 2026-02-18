@@ -5,7 +5,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { PrivateRoute } from './components/PrivateRoute';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
+import TimelinePage from './pages/TimelinePage';
 import ArticleCreatePage from './pages/ArticleCreatePage';
 import ArticleDetailPage from './pages/ArticleDetailPage';
 import ArticleEditPage from './pages/ArticleEditPage';
@@ -16,7 +16,7 @@ const App: React.FC = () => {
             <BrowserRouter>
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
-                    <Route path="/" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+                    <Route path="/" element={<PrivateRoute><TimelinePage /></PrivateRoute>} />
                     <Route path="/articles/create" element={<PrivateRoute><ArticleCreatePage /></PrivateRoute>} />
                     <Route path="/articles/:slug" element={<PrivateRoute><ArticleDetailPage /></PrivateRoute>} />
                     <Route path="/articles/:slug/edit" element={<PrivateRoute><ArticleEditPage /></PrivateRoute>} />

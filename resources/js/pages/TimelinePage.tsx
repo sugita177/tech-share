@@ -4,7 +4,7 @@ import axiosClient from '../api/axiosClient';
 import { Article, PaginatedResponse, PaginationData } from '../types/api';
 import { Link } from 'react-router-dom';
 
-const DashboardPage: React.FC = () => {
+const TimelinePage: React.FC = () => {
     const { logout } = useAuth();
     const [articles, setArticles] = useState<Article[]>([]);
     const [pagination, setPagination] = useState<PaginationData | null>(null);
@@ -143,4 +143,4 @@ const DashboardPage: React.FC = () => {
     );
 };
 
-export default DashboardPage;
+export default TimelinePage;
