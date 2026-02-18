@@ -59,9 +59,18 @@ const TimelinePage: React.FC = () => {
         <div className="min-h-screen bg-gray-50 p-8">
             <nav className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm">
                 <h1 className="text-2xl font-extrabold text-sky-600">社内共有アプリ</h1>
-                <button onClick={logout} className="bg-red-50 text-red-600 font-semibold px-4 py-2 rounded-lg hover:bg-red-100 transition">
-                    ログアウト
-                </button>
+                <div className="flex items-center gap-4">
+                    <Link 
+                        to="/my/articles" 
+                        className="text-gray-600 font-bold hover:text-sky-600 transition"
+                    >
+                        自分の記事
+                    </Link>
+
+                    <button onClick={logout} className="bg-red-50 text-red-600 font-semibold px-4 py-2 rounded-lg hover:bg-red-100 transition">
+                        ログアウト
+                    </button>
+                </div>
             </nav>
 
             <div className="max-w-4xl mx-auto">
