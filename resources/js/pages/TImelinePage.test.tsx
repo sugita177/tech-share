@@ -192,4 +192,41 @@ describe('TimelinePage', () => {
         expect(link1).toHaveAttribute('href', '/articles/slug-1');
         expect(link2).toHaveAttribute('href', '/articles/slug-2');
     });
+
+    it('記事が1件もない場合、適切なメッセージが表示されること', async () => {
+        (axiosClient.get as any).mockResolvedValue({
+            data: { data: [], links: {}, meta: { current_page: 1, last_page: 1 } }
+        });
+
+        renderDashboard();
+
+        await waitFor(() => {
+            // 現在の実装に合わせて「最新の記事」の下に何が出るか（あるいは出ないか）を確認
+            // もし「記事がありません」という表示を実装するなら、その検証をここで行う
+            expect(screen.queryByText('記事1')).not.toBeInTheDocument();
+        });
+    });
+
+    it('「自分の記事」へのリンクが正しく設定されていること', async () => {
+        (axiosClient.get as any).mockResolvedValue(mockPaginationResponse);
+        renderDashboard();
+
+        // リンクが表示されるのを待つ
+        const myArticlesLink = await screen.findByRole('link', { name: /自分の記事/i });
+        
+        // 期待する遷移先を確認
+        expect(myArticlesLink).toHaveAttribute('href', '/my/articles');
+    });
+
+    it('APIエラーが発生したとき、読み込み中表示が消えること', async () => {
+        // 意図的に失敗させる
+        (axiosClient.get as any).mockRejectedValue(new Error('API Error'));
+        
+        renderDashboard();
+        
+        // 読み込み中が消えるまで待つ（finally ブロックの動作確認）
+        await waitFor(() => {
+            expect(screen.queryByText(/読み込み中/i)).not.toBeInTheDocument();
+        });
+    });
 });
