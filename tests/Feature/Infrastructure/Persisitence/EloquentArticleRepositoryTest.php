@@ -8,7 +8,9 @@ use App\Models\Article as EloquentArticle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
-
+/**
+ * @property EloquentArticleRepository $repository
+ */
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
@@ -226,4 +228,35 @@ test('delete: 存在しないIDを指定した場合、ModelNotFoundExceptionを
     // 1. 実行 & 2. 検証
     expect(fn() => $this->repository->delete(9999))
         ->toThrow(ModelNotFoundException::class);
+});
+
+test('paginate: 特定のユーザーIDで絞り込みができること', function () {
+    // 1. 準備：ユーザーAとユーザーBの記事を作成
+    $userA = User::factory()->create();
+    $userB = User::factory()->create();
+
+    EloquentArticle::factory()->create(['user_id' => $userA->id, 'title' => 'User A Article']);
+    EloquentArticle::factory()->create(['user_id' => $userB->id, 'title' => 'User B Article']);
+
+    // 2. 実行：ユーザーAのIDを指定して取得
+    $result = $this->repository->paginate(perPage: 10, userId: $userA->id);
+
+    // 3. 検証
+    expect($result->items())->toHaveCount(1);
+    expect($result->items()[0]->title)->toBe('User A Article');
+    expect($result->items()[0]->userId)->toBe($userA->id);
+});
+
+test('paginate: ユーザーIDとステータスの組み合わせで絞り込みができること', function () {
+    $user = User::factory()->create();
+    
+    // 公開中と下書きを1件ずつ作成
+    EloquentArticle::factory()->create(['user_id' => $user->id, 'status' => ArticleStatus::Published]);
+    EloquentArticle::factory()->create(['user_id' => $user->id, 'status' => ArticleStatus::Draft]);
+
+    // 実行：ユーザーID + 下書きステータスで取得
+    $result = $this->repository->paginate(perPage: 10, status: ArticleStatus::Draft, userId: $user->id);
+
+    expect($result->items())->toHaveCount(1);
+    expect($result->items()[0]->status)->toBe(ArticleStatus::Draft);
 });
