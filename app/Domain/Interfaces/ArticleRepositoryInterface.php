@@ -18,7 +18,11 @@ interface ArticleRepositoryInterface
     /**
      * ページングして複数記事を取得
      */
-    public function paginate(int $perPage = 10, ?ArticleStatus $status = null): LengthAwarePaginator;
+    public function paginate(
+        int $perPage = 10,
+        ?ArticleStatus $status = null,
+        ?int $userId = null
+    ): LengthAwarePaginator;
 
     /**
      * 記事を保存（新規作成・更新両用）

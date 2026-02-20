@@ -14,6 +14,7 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
 {
     public function findById(int $id): ?ArticleEntity
     {
+        /** @var \App\Models\Article */
         $article = EloquentArticle::find($id);
         return $article ? $this->toEntity($article) : null;
     }
@@ -43,7 +44,7 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
         $model->delete();
     }
 
-    public function paginate(int $perPage = 10, ?ArticleStatus $status = null): LengthAwarePaginator
+    public function paginate(int $perPage = 10, ?ArticleStatus $status = null, ?int $userId = null): LengthAwarePaginator
     {
         // クエリビルダーを開始
         $query = EloquentArticle::latest();
@@ -51,6 +52,11 @@ class EloquentArticleRepository implements ArticleRepositoryInterface
         // ステータス指定があればフィルタリング（観測条件の適用）
         if ($status) {
             $query->where('status', $status->value);
+        }
+
+        // ユーザーIDで絞り込み（所有権の境界条件）
+        if ($userId) {
+            $query->where('user_id', $userId);
         }
 
         // 実行（ページネーション）
