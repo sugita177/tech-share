@@ -16,6 +16,7 @@ use App\UseCases\Article\UpdateArticleInput;
 use App\Domain\Enums\ArticleStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Auth;
 
 class ArticleController extends Controller
 {
@@ -49,7 +50,7 @@ class ArticleController extends Controller
 
     public function show(string $slug, FindArticleBySlugUseCase $useCase): ArticleResource
     {
-        $article = $useCase->execute($slug);
+        $article = $useCase->execute($slug, (int)Auth::id());
 
         return new ArticleResource($article);
     }
