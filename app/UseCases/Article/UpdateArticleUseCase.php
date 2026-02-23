@@ -22,7 +22,8 @@ class UpdateArticleUseCase
     public function execute(UpdateArticleInput $input): Article
     {
         // トランザクションの「場」の中で処理を実行する
-        return $this->transactionManager->run(function () use ($input) {
+        /** @var Article */
+        $result = $this->transactionManager->run(function () use ($input) {
             // 1. まず現在のデータを取得（存在チェックも兼ねる）
             $currentArticle = $this->repository->findById($input->id);
             if (!$currentArticle) {
@@ -62,5 +63,7 @@ class UpdateArticleUseCase
 
             return $this->repository->update($updatedArticle);
         });
+        
+        return $result;
     }
 }
